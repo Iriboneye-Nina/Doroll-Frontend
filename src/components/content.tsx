@@ -129,10 +129,10 @@ const DashboardData = () => {
   return (
     <Layout>
       <div>
-        <div
-          className="bg-white h-14 flex justify-between items-center px-6 py-2 mx-auto rounded-lg mt-5"
-          style={{ width: "95%", marginLeft: "50px" }}
-        >
+      <div
+  className="bg-white h-14 flex justify-between items-center px-6 py-2 rounded-lg mt-5 mx-auto"
+  style={{ width: "95%", maxWidth: "1200px" }}
+>
           <span className="text-lg">Pending tasks - 7</span>
           <Input
             prefix={<SearchOutlined />}
