@@ -84,8 +84,8 @@ const DashboardData = () => {
 
   return (
     <Layout>
-      <div className="p-6">
-        <div className="bg-white h-14 flex justify-between items-center px-6 py-2 rounded-lg mt-5 mx-auto max-w-screen-lg">
+      <div className="p-2">
+        <div className="bg-white h-14 flex justify-between items-center px-6 py-1 rounded-lg mt-1 mx-auto max-w-screen-lg">
           <span className="text-lg">Pending tasks - 7</span>
           <Input
             prefix={<SearchOutlined />}
@@ -221,7 +221,7 @@ const DashboardData = () => {
               padding: 24,
               marginTop: "20px",
               minHeight: 280,
-              background: colorBgContainer,
+              // background: colorBgContainer,
               borderRadius: borderRadiusLG,
             }}
           >

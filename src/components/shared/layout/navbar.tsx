@@ -136,53 +136,56 @@ const Navbar = (props: any) => {
         footer={null}
         closable={false}
       >
-        <Form
-          name="taskForm"
-          layout="vertical"
-          onFinish={(values) => {
-            console.log('Task Form Values:', values);
-            setShowTaskForm(false);
-          }}
-        >
-          <div className="flex justify-between gap-4">
-            <Form.Item
-              label="Task Name"
-              name="taskName"
-              rules={[{ required: true, message: 'Please enter the task name!' }]}
-              className="w-1/2"
-            >
-              <Input
-                placeholder="Enter title"
-                prefix={<FileTextOutlined />}
-              />
-            </Form.Item>
-            <Form.Item
-              label="Due Date"
-              name="dueDate"
-              rules={[{ required: true, message: 'Please select a due date!' }]}
-              className="w-1/2"
-            >
-              <Input.Group compact>
-                <Input
-                  style={{ width: '10%' }}
-                  addonBefore={<CalendarOutlined />}
-                  disabled
-                />
-                <DatePicker style={{ width: '90%' }} />
-              </Input.Group>
-            </Form.Item>
-          </div>
-          <Form.Item
-            label="Description"
-            name="description"
-            rules={[{ required: true, message: 'Please enter the description!' }]}
-          >
-            <Input.TextArea placeholder="Enter description" />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" size="small" icon={<PlusOutlined />}>
-            Add Task
-          </Button>
-        </Form>
+ <Form
+  name="taskForm"
+  layout="vertical"
+  onFinish={(values) => {
+    console.log('Task Form Values:', values);
+    setShowTaskForm(false);
+  }}
+>
+  <div className="flex justify-between gap-4">
+    <Form.Item
+      label="Task Name"
+      name="taskName"
+      rules={[{ required: true, message: 'Please enter the task name!' }]}
+      className="w-1/2"
+    >
+      <Input
+        placeholder="Enter title"
+        prefix={<FileTextOutlined />}
+      />
+    </Form.Item>
+    <Form.Item
+      label="Due Date"
+      name="dueDate"
+      rules={[{ required: true, message: 'Please select a due date!' }]}
+      className="w-1/2"
+    >
+      <Input.Group compact>
+        <Input
+        />
+        <DatePicker style={{ width: '90%' }} />
+      </Input.Group>
+    </Form.Item>
+  </div>
+  <Form.Item
+    label="Description"
+    name="description"
+    rules={[{ required: true, message: 'Please enter the description!' }]}
+   >
+    <Input.TextArea placeholder="Enter description" />
+  </Form.Item>
+
+  {/* Button placed on the right side below the description */}
+  <div className="flex justify-end mt-4">
+    <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
+      <span>Add Task</span>
+      <PlusOutlined />
+    </Button>
+  </div>
+</Form>
+
       </Modal>
     </>
   );
