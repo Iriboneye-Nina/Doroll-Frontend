@@ -105,9 +105,9 @@ const Navbar = (props: any) => {
 
         {/* Right Side Buttons */}
         <div className="flex items-center space-x-4 relative">
-          <Button onClick={() => setShowTaskForm(true)} type="primary">
-            <PlusOutlined className="text-xl" />
-            <span>Add Task</span>
+       <Button onClick={() => setShowTaskForm(true)} type="primary" className="flex items-center gap-2">
+        <span>Add Task</span>
+        <PlusOutlined className="text-xl" />
           </Button>
           <div className="flex items-center">
             <UserOutlined
@@ -144,47 +144,48 @@ const Navbar = (props: any) => {
     setShowTaskForm(false);
   }}
 >
-  <div className="flex justify-between gap-4">
-    <Form.Item
-      label="Task Name"
-      name="taskName"
-      rules={[{ required: true, message: 'Please enter the task name!' }]}
-      className="w-1/2"
-    >
-      <Input
-        placeholder="Enter title"
-        prefix={<FileTextOutlined />}
-      />
-    </Form.Item>
-    <Form.Item
-      label="Due Date"
-      name="dueDate"
-      rules={[{ required: true, message: 'Please select a due date!' }]}
-      className="w-1/2"
-    >
-      <Input.Group compact>
-        <Input
-        />
-        <DatePicker style={{ width: '90%' }} />
-      </Input.Group>
-    </Form.Item>
-  </div>
+<div className="flex justify-between gap-4">
+  <Form.Item
+    label="Task Name"
+    name="taskName"
+  
+    className="w-1/2"
+  >
+    <Input
+      placeholder="Enter title"
+      prefix={<FileTextOutlined />}
+    />
+  </Form.Item>
+
+  <Form.Item
+    label="Select Date"
+    name="selectDate"
+   
+    className="w-1/2"
+  >
+    <Input
+      placeholder="MM/DD/YYYY" 
+      prefix={<CalendarOutlined type="primary" />} 
+      addonAfter={<CalendarOutlined form="MM/DD/YYYY" placeholder="MM/DD/YYYY" className="w-full" />} 
+    />
+  </Form.Item>
+</div>
   <Form.Item
     label="Description"
     name="description"
-    rules={[{ required: true, message: 'Please enter the description!' }]}
+
    >
     <Input.TextArea placeholder="Enter description" />
   </Form.Item>
 
   {/* Button placed on the right side below the description */}
   <div className="flex justify-end mt-4">
-    <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
-      <span>Add Task</span>
-      <PlusOutlined />
-    </Button>
-  </div>
-</Form>
+  <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
+    <span>Add Task</span>
+    <PlusOutlined />
+  </Button>
+</div>
+  </Form>
 
       </Modal>
     </>

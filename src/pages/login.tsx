@@ -76,7 +76,7 @@ export default function Login(props: any) {
                             <Text>If you dont have an account?</Text>
                             <Text>Go to register</Text>
                         </div>
-                        <Link href="/register"> {/* Use Next.js Link for client-side navigation */}
+                        <Link href="/signUp"> {/* Use Next.js Link for client-side navigation */}
                             <Button icon={<LoginOutlined className="text-[#C0D310]" />} className="text-[#C0D310]">
                                 Register
                             </Button>
