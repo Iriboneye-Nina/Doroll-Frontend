@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button, Modal, Form, Input, DatePicker, Card } from 'antd';
 import dynamic from 'next/dynamic';
-import Link from 'next/link'; // Import Link from next/link
+import Link from 'next/link';
 
-// Dynamically import Ant Design icons
+
 const HomeOutlined = dynamic(() => import('@ant-design/icons/HomeOutlined'), { ssr: false });
 const PlusOutlined = dynamic(() => import('@ant-design/icons/PlusOutlined'), { ssr: false });
 const UserOutlined = dynamic(() => import('@ant-design/icons/UserOutlined'), { ssr: false });
@@ -19,7 +19,7 @@ const LogoutOutlined = dynamic(() => import('@ant-design/icons/LogoutOutlined'),
 const ProfileModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   <Card className="absolute top-12 right-0 p-4 bg-white shadow-md rounded-md" style={{zIndex:111}}>
     <div className="flex flex-col" >
-      {/* Profile Image and Username */}
+   
       <div className='flex gap-1 mb-4 mt-0 '>
         <img 
           src="/profile.jpg" 

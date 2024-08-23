@@ -244,6 +244,7 @@ const DashboardData = () => {
                     <Checkbox className="relative bottom-[2px]" />
                   </div>
                 </div>
+                
               ))}
             </div>
           </Content>
@@ -257,7 +258,8 @@ const DashboardData = () => {
         onCancel={handleModalClose}
         footer={[
           <Button key="back" onClick={handleModalClose}>
-            Return
+            <EditOutlined onClick={() => setShowTaskForm(true)} />
+            <DeleteOutlined />
           </Button>,
         ]}
       >
@@ -272,38 +274,63 @@ const DashboardData = () => {
       </Modal>
 
       <Modal
-        title="Task Form"
-        visible={showTaskForm}
+        title="New Task"
+        open={showTaskForm}
         onCancel={() => setShowTaskForm(false)}
         footer={null}
+        closable={false}
       >
-        <Form
-          layout="vertical"
-          initialValues={{
-            title: '',
-            description: '',
-            content: '',
-            createdDate: '',
-          }}
-        >
-          <Form.Item label="Title" name="title" rules={[{ required: true, message: 'Please input the title!' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item label="Description" name="description">
-            <Input.TextArea rows={4} />
-          </Form.Item>
-          <Form.Item label="Content" name="content">
-            <Input.TextArea rows={4} />
-          </Form.Item>
-          <Form.Item label="Created Date" name="createdDate">
-            <Input type="date" />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              Submit
-            </Button>
-          </Form.Item>
-        </Form>
+ <Form
+  name="taskForm"
+  layout="vertical"
+  onFinish={(values) => {
+    console.log('Task Form Values:', values);
+    setShowTaskForm(false);
+  }}
+>
+<div className="flex justify-between gap-2">
+  <Form.Item
+    label="Task Name"
+    name="taskName"
+  
+    className="w-1/2"
+  >
+    <Input
+      placeholder="Enter title"
+      prefix={<FileTextOutlined />}
+    />
+  </Form.Item>
+
+  <Form.Item
+    label="Select Date"
+    name="selectDate"
+   
+    className="w-1/2"
+  >
+    <Input
+      placeholder="MM/DD/YYYY" 
+      prefix={<CalendarOutlined type="primary" />} 
+      addonAfter={<CalendarOutlined form="MM/DD/YYYY" placeholder="MM/DD/YYYY" className="w-full" />} 
+    />
+  </Form.Item>
+</div>
+  <Form.Item
+    label="Description"
+    name="description"
+
+   >
+    <Input.TextArea placeholder="Enter description" />
+  </Form.Item>
+
+  {/* Button placed on the right side below the description */}
+  <div className="flex justify-end mt-4">
+  <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
+    <span>Add Task</span>
+    <PlusOutlined />
+  </Button>
+</div>
+  </Form>
+
       </Modal>
     </Layout>
   );
