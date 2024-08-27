@@ -69,13 +69,44 @@ const DashboardData = () => {
   const menuProps = {
     items: [
       {
+        label: "On Track",
+        key: "ontrack",
+      },
+      {
+        label: "Off Track",
+        key: "offtrack",
+      },
+      {
+        label: "Done",
+        key: "done",
+      },
+      {
         label: "Logout",
-        key: "1",
-        icon: <LogoutOutlined />,
+        key: "logout",
       },
     ],
     onClick: handleMenuClick,
   };
+   const filterProps = {
+    items: [
+      {
+        label: "this week",
+        key: "this week",
+      },
+      {
+        label: "this morth",
+        key: "this morth",
+      },
+      {
+        label: "this year",
+        key: "this year",
+      },
+   
+    ]
+  }
+
+  
+  
 
   const handleModalOpen = (todo: Todo) => {
     setSelectedTodo(todo);
@@ -120,7 +151,7 @@ const DashboardData = () => {
         >
           <div className="p-2">
             <Title level={5} className="text-white">Summary</Title>
-            <Dropdown menu={menuProps}>
+            <Dropdown menu={filterProps}>
               <Button className="w-full flex justify-between items-center p-2 rounded-md bg-white border border-gray-200">
                 <FilterOutlined className="text-lg mr-2" />
                 <span>This Week</span>
