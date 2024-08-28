@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Button, Modal, Form, Input, DatePicker, Card } from 'antd';
+import { Button, Modal, Form, Input, DatePicker, Card, message } from 'antd'; // Import message
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import jwtDecode from 'jwt-decode';
 import { useAddTaskMutation } from '@/lib/auth/authSlice';
 
 const HomeOutlined = dynamic(() => import('@ant-design/icons/HomeOutlined'), { ssr: false });
@@ -69,24 +70,33 @@ const Navbar = (props: any) => {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [addTask] = useAddTaskMutation();
-
+  
   const toggleProfileForm = () => {
     setShowProfileForm(prev => !prev);
   };
 
   const handleAddTask = async (values: any) => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error('No token found');
+      }
+      
       const taskData = {
         title: values.taskName,
         description: values.description,
-        createdDate: values.selectDate.format('YYYY-MM-DD'),
+        deadline: values.selectDate.format('YYYY-MM-DD')
       };
+
       await addTask(taskData).unwrap();
-      console.log('Task added successfully');
+      
+      // Show success message
+      message.success('Task added successfully!');
+      
       setShowTaskForm(false);
     } catch (error) {
       console.error('Failed to add task:', error);
-      alert("Failed to add task. Please try again.");
+      message.error('Failed to add task. Please try again.');
     }
   };
 
@@ -131,6 +141,55 @@ const Navbar = (props: any) => {
       </div>
 
       <Modal
+        title="New Task"
+        open={showTaskForm}
+        onCancel={() => setShowTaskForm(false)}
+        footer={null}
+        closable={false}
+      >
+        <Form
+          name="taskForm"
+          layout="vertical"
+          onFinish={handleAddTask}
+        >
+          <div className="flex justify-between gap-4">
+            <Form.Item
+              label="Task Name"
+              name="taskName"
+              className="w-1/2"
+              rules={[{ required: true, message: 'Please enter the task name' }]}
+            >
+              <Input
+                placeholder="Enter title"
+                prefix={<FileTextOutlined />}
+              />
+            </Form.Item>
+            <Form.Item
+              label="Select Date"
+              name="selectDate"
+              className="w-1/2"
+              rules={[{ required: true, message: 'Please select a date' }]}
+            >
+              <DatePicker
+                format="YYYY-MM-DD"
+                placeholder="MM/DD/YYYY"
+              />
+            </Form.Item>
+          </div>
+          <Form.Item
+            label="Description"
+            name="description"
+          >
+            <Input.TextArea placeholder="Enter description" />
+          </Form.Item>
+          <div className="flex justify-end mt-4">
+            <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
+              <span>Add Task</span>
+              <PlusOutlined />
+            </Button>
+          </div>
+        </Form>
+      </Modal><Modal
         title="New Task"
         open={showTaskForm}
         onCancel={() => setShowTaskForm(false)}

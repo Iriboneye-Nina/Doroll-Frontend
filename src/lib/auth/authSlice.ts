@@ -3,23 +3,19 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 const baseQuery = fetchBaseQuery({
   baseUrl: "http://localhost:5000/",
   prepareHeaders: (headers, { endpoint }) => {
-    // Add Authorization header only for 'tasks' related endpoints
-    if (endpoint.includes("Task")) {
-      const token = localStorage.getItem("access_token");
+    const token = localStorage.getItem("token");
 
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
     }
 
     return headers;
   },
 });
 
-// Define the combined API slice
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: baseQuery,
+  baseQuery,
   endpoints: (builder) => ({
     // Auth endpoints
     registerUser: builder.mutation<any, any>({
@@ -31,10 +27,12 @@ export const apiSlice = createApi({
     }),
     loginUser: builder.mutation<
       {
-          statusCode: number;
-          message: string;
-          error: any; access_token: string; user: any 
-},
+        statusCode: number;
+        message: string;
+        error: any;
+        access_token: string;
+        user: any;
+      },
       { email: string; password: string }
     >({
       query: (loginData) => ({
@@ -43,10 +41,17 @@ export const apiSlice = createApi({
         body: loginData,
       }),
     }),
+    forgetPassword: builder.mutation<any, { email: string }>({
+      query: (emailData) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body: emailData,
+      }),
+    }),
 
     // Task management endpoints
     fetchTasks: builder.query<any, void>({
-      query: () => "/todos",
+      query: () => "/todos/my-todos",
     }),
     addTask: builder.mutation<any, any>({
       query: (taskData) => ({
@@ -74,6 +79,7 @@ export const apiSlice = createApi({
 export const {
   useRegisterUserMutation,
   useLoginUserMutation,
+  useForgetPasswordMutation, 
   useFetchTasksQuery,
   useAddTaskMutation,
   useUpdateTaskMutation,
