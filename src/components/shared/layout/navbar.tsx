@@ -189,7 +189,8 @@ const Navbar = (props: any) => {
             </Button>
           </div>
         </Form>
-      </Modal><Modal
+      </Modal>
+      <Modal
         title="New Task"
         open={showTaskForm}
         onCancel={() => setShowTaskForm(false)}
