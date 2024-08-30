@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useFetchTasksQuery } from "../lib/auth/authSlice";
+import { useFetchTasksQuery} from "../lib/auth/authSlice";
 import {
   CheckOutlined,
   FileOutlined,
@@ -10,12 +10,16 @@ import {
   HolderOutlined,
   DeleteOutlined,
   SearchOutlined,
+  PlusOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import {
   Button,
   Card,
   Checkbox,
+  DatePicker,
   Dropdown,
+  Form,
   Input,
   Layout,
   MenuProps,
@@ -41,12 +45,13 @@ const { Title } = Typography;
 const { Header, Content, Sider } = Layout;
 
 const DashboardData = () => {
+  const [showTaskForm, setShowTaskForm] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(6); // Number of todos per page
+  const [pageSize] = useState(6);
 
   // Fetch tasks
   const { data, error, isLoading } = useFetchTasksQuery();
@@ -125,49 +130,53 @@ const DashboardData = () => {
           onClick={() => handleModalOpen(record)}
         />
       ),
+      width: 50,
     },
     {
       title: "",
       dataIndex: "number",
       key: "number",
       render: (text: any, record: any, index: number) => index + 1,
+      width: 50,
     },
     {
-      title: "Title",
-      dataIndex: "title",
-      key: "title",
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-    },
-    {
-      title: "Content",
-      dataIndex: "content",
-      key: "content",
-    },
-    {
-      title: "Status",
+      title: "",
       dataIndex: "status",
       key: "status",
+      width: 100,
     },
     {
-      title: "Created Date",
-      dataIndex: "createdDate",
+      title: "",
+      dataIndex: "title",
+      key: "title",
+      width: 150,
+      render: (text: string, record: Todo) => (
+        <span
+          style={{ cursor: 'pointer', color: '#1890ff' }}
+          onClick={() => handleModalOpen(record)}
+        >
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: "",
+      dataIndex: "deadline",
       key: "createdDate",
+      width: 150,
       render: (text: string) => (
         <span style={{ fontWeight: "bold" }}>{text}</span>
       ),
     },
     {
-      title: "Actions",
+      title: "",
       key: "actions",
       render: (text: string, record: Todo) => (
         <Space>
           <Button
             type="link"
             icon={<EditOutlined />}
+            onClick={() => handleModalOpen(record)}
           />
           <Popconfirm
             title="Are you sure to delete this task?"
@@ -181,9 +190,9 @@ const DashboardData = () => {
           />
         </Space>
       ),
+      width: 150,
     },
   ];
-  
 
   // Pagination configuration
   const paginationConfig = {
@@ -329,32 +338,87 @@ const DashboardData = () => {
             margin: "20px 20px",
           }}
         >
-          <Table
-            columns={columns}
-            dataSource={filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
-            rowKey="id"
-            pagination={paginationConfig}
-            scroll={{ x: 'max-content' }} // Enable horizontal scrolling if necessary
-            style={{ padding: 0 }} // Decrease padding
-          />
+          <div style={{ overflowX: 'auto' }}>
+            <Table
+              columns={columns}
+              dataSource={filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+              rowKey="id"
+              pagination={paginationConfig}
+              style={{ padding: 0 }}
+              className="w-full"
+            />
+          </div>
         </Content>
       </Layout>
 
       <Modal
-        title="Todo Details"
+        title=""
         visible={isModalVisible}
         onCancel={handleModalClose}
         footer={null}
       >
         {selectedTodo && (
-          <div>
-            <Title level={4}>{selectedTodo.title}</Title>
-            <p><strong>Description:</strong> {selectedTodo.description}</p>
-            <p><strong>Content:</strong> {selectedTodo.content}</p>
-            <p><strong>Created Date:</strong> {selectedTodo.createdDate}</p>
-            <p><strong>Status:</strong> {selectedTodo.status}</p>
-          </div>
+          <>
+            <div>
+              <Title level={4}>{selectedTodo.title}</Title>
+              <div className="flex flex-row justify-between">
+                <div>
+                  <button>Get thanks</button>
+                </div>
+                <div>
+                  <span> Due 29/8/2024</span>
+                </div>
+              </div>
+              <p><strong>Content:</strong> {selectedTodo.content}</p>
+              <p><strong>Created Date:</strong> {selectedTodo.createdDate}</p>
+              <p><strong>Status:</strong> {selectedTodo.status}</p>
+            </div>
+            <div className="flex flex-row justify-between">
+              <div>createdDate:29/8/2024</div>
+              <div>
+                <span><EditOutlined type='primary' onClick={() => setShowTaskForm(true)}/></span>
+                <span><DeleteOutlined type='primary'/></span>
+              </div>
+            </div>
+          </>
         )}
+      </Modal>
+      <Modal
+        title="New Task"
+        open={showTaskForm}
+        onCancel={() => setShowTaskForm(false)}
+        footer={null}
+        closable={false}
+      >
+        <Form name="taskForm" layout="vertical" >
+          <div className="flex justify-between gap-4">
+            <Form.Item
+              label="Task Name"
+              name="taskName"
+              className="w-1/2"
+              rules={[{ required: true, message: 'Please enter the task name' }]}
+            >
+              <Input placeholder="Enter title" prefix={<FileTextOutlined />} />
+            </Form.Item>
+            <Form.Item
+              label="Select Date"
+              name="selectDate"
+              className="w-1/2"
+              rules={[{ required: true, message: 'Please select a date' }]}
+            >
+              <DatePicker format="YYYY-MM-DD" placeholder="MM/DD/YYYY" />
+            </Form.Item>
+          </div>
+          <Form.Item label="Description" name="description">
+            <Input.TextArea placeholder="Enter description" />
+          </Form.Item>
+          <div className="flex justify-end mt-4">
+            <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
+              <span>Add Task</span>
+              <PlusOutlined />
+            </Button>
+          </div>
+        </Form>
       </Modal>
     </Layout>
   );

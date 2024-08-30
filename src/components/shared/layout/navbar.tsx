@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Button, Modal, Form, Input, DatePicker, Card, message } from 'antd'; // Import message
+import React, { useState, useEffect } from 'react';
+import { Button, Modal, Form, Input, DatePicker, Card, message } from 'antd';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
+import { useRouter } from 'next/router';
 import jwtDecode from 'jwt-decode';
 import { useAddTaskMutation } from '@/lib/auth/authSlice';
 
@@ -10,23 +10,23 @@ const PlusOutlined = dynamic(() => import('@ant-design/icons/PlusOutlined'), { s
 const UserOutlined = dynamic(() => import('@ant-design/icons/UserOutlined'), { ssr: false });
 const CheckOutlined = dynamic(() => import('@ant-design/icons/CheckOutlined'), { ssr: false });
 const SettingOutlined = dynamic(() => import('@ant-design/icons/SettingOutlined'), { ssr: false });
-const CalendarOutlined = dynamic(() => import('@ant-design/icons/CalendarOutlined'), { ssr: false });
 const FileTextOutlined = dynamic(() => import('@ant-design/icons/FileTextOutlined'), { ssr: false });
 const InfoCircleOutlined = dynamic(() => import('@ant-design/icons/InfoCircleOutlined'), { ssr: false });
 const QuestionCircleOutlined = dynamic(() => import('@ant-design/icons/QuestionCircleOutlined'), { ssr: false });
 const LockOutlined = dynamic(() => import('@ant-design/icons/LockOutlined'), { ssr: false });
 const LogoutOutlined = dynamic(() => import('@ant-design/icons/LogoutOutlined'), { ssr: false });
+const DeleteOutlined = dynamic(() => import('@ant-design/icons/DeleteOutlined'), { ssr: false });
 
-const ProfileModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+const ProfileModal: React.FC<{ onClose: () => void; email: string; onLogout: () => void }> = ({ onClose, email, onLogout }) => (
   <Card className="absolute top-12 right-0 p-4 bg-white shadow-md rounded-md" style={{ zIndex: 111 }}>
     <div className="flex flex-col">
-      <div className='flex gap-1 mb-4 mt-0'>
+      <div className="flex gap-1 mb-4 mt-0">
         <img
           src="/profile.jpg"
           alt="Profile"
-          className="w-16 h-16 rounded w-[64px] h-[48px] object-cover mr-2"
+          className="w-16 h-16 rounded w-[64px] h-[64px] object-cover mr-2"
         />
-        <h2 className="text-xl font-semibold p-1">Username</h2>
+        <h2 className="text-xl font-semibold p-1">{email}</h2>
       </div>
       <div className="w-full mb-4 border-t border-gray-200" />
       <div className="flex flex-col w-full">
@@ -46,20 +46,16 @@ const ProfileModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
           <LockOutlined className="text-lg mr-2" />
           <span className="text-sm">Privacy</span>
         </div>
-        <div className="w-full mb-[16x] border-t border-gray-200" />
+        <div className="w-full mb-[16px] border-t border-gray-200" />
+        <div className="flex items-center mb-2">
+          <DeleteOutlined className="text-lg mr-2" />
+         
+        </div>
         <div className="flex items-center mb-2">
           <LogoutOutlined className="text-lg mr-2" />
-          <Link href="/login">
-            <Button
-              type="link"
-              onClick={() => {
-                console.log('Logging out...');
-                onClose();
-              }}
-            >
-              Logout
-            </Button>
-          </Link>
+          <Button type="link" onClick={onLogout}>
+            Logout
+          </Button>
         </div>
       </div>
     </div>
@@ -69,8 +65,22 @@ const ProfileModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
 const Navbar = (props: any) => {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
   const [addTask] = useAddTaskMutation();
-  
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decodedToken: any = jwtDecode(token);
+        setEmail(decodedToken.email);
+      } catch (error) {
+        console.error('Failed to decode token:', error);
+      }
+    }
+  }, []);
+
   const toggleProfileForm = () => {
     setShowProfileForm(prev => !prev);
   };
@@ -81,7 +91,7 @@ const Navbar = (props: any) => {
       if (!token) {
         throw new Error('No token found');
       }
-      
+
       const taskData = {
         title: values.taskName,
         description: values.description,
@@ -89,15 +99,20 @@ const Navbar = (props: any) => {
       };
 
       await addTask(taskData).unwrap();
-      
-      // Show success message
+
       message.success('Task added successfully!');
-      
       setShowTaskForm(false);
     } catch (error) {
       console.error('Failed to add task:', error);
       message.error('Failed to add task. Please try again.');
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setEmail(null);
+    router.push('/login');
+    message.success('Logged out successfully!');
   };
 
   return (
@@ -137,7 +152,7 @@ const Navbar = (props: any) => {
       </nav>
 
       <div className="pt-[20px]">
-        {showProfileForm && <ProfileModal onClose={() => setShowProfileForm(false)} />}
+        {showProfileForm && <ProfileModal email={email || 'User'} onClose={() => setShowProfileForm(false)} onLogout={handleLogout} />}
       </div>
 
       <Modal
@@ -147,11 +162,7 @@ const Navbar = (props: any) => {
         footer={null}
         closable={false}
       >
-        <Form
-          name="taskForm"
-          layout="vertical"
-          onFinish={handleAddTask}
-        >
+        <Form name="taskForm" layout="vertical" onFinish={handleAddTask}>
           <div className="flex justify-between gap-4">
             <Form.Item
               label="Task Name"
@@ -159,10 +170,7 @@ const Navbar = (props: any) => {
               className="w-1/2"
               rules={[{ required: true, message: 'Please enter the task name' }]}
             >
-              <Input
-                placeholder="Enter title"
-                prefix={<FileTextOutlined />}
-              />
+              <Input placeholder="Enter title" prefix={<FileTextOutlined />} />
             </Form.Item>
             <Form.Item
               label="Select Date"
@@ -170,66 +178,10 @@ const Navbar = (props: any) => {
               className="w-1/2"
               rules={[{ required: true, message: 'Please select a date' }]}
             >
-              <DatePicker
-                format="YYYY-MM-DD"
-                placeholder="MM/DD/YYYY"
-              />
+              <DatePicker format="YYYY-MM-DD" placeholder="MM/DD/YYYY" />
             </Form.Item>
           </div>
-          <Form.Item
-            label="Description"
-            name="description"
-          >
-            <Input.TextArea placeholder="Enter description" />
-          </Form.Item>
-          <div className="flex justify-end mt-4">
-            <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
-              <span>Add Task</span>
-              <PlusOutlined />
-            </Button>
-          </div>
-        </Form>
-      </Modal>
-      <Modal
-        title="New Task"
-        open={showTaskForm}
-        onCancel={() => setShowTaskForm(false)}
-        footer={null}
-        closable={false}
-      >
-        <Form
-          name="taskForm"
-          layout="vertical"
-          onFinish={handleAddTask}
-        >
-          <div className="flex justify-between gap-4">
-            <Form.Item
-              label="Task Name"
-              name="taskName"
-              className="w-1/2"
-              rules={[{ required: true, message: 'Please enter the task name' }]}
-            >
-              <Input
-                placeholder="Enter title"
-                prefix={<FileTextOutlined />}
-              />
-            </Form.Item>
-            <Form.Item
-              label="Select Date"
-              name="selectDate"
-              className="w-1/2"
-              rules={[{ required: true, message: 'Please select a date' }]}
-            >
-              <DatePicker
-                format="YYYY-MM-DD"
-                placeholder="MM/DD/YYYY"
-              />
-            </Form.Item>
-          </div>
-          <Form.Item
-            label="Description"
-            name="description"
-          >
+          <Form.Item label="Description" name="description">
             <Input.TextArea placeholder="Enter description" />
           </Form.Item>
           <div className="flex justify-end mt-4">

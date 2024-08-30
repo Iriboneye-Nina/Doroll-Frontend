@@ -48,7 +48,9 @@ export const apiSlice = createApi({
         body: emailData,
       }),
     }),
-
+    fetchUserProfile: builder.query<any, void>({
+      query: () => "/auth/me", // Adjust this endpoint as necessary
+    }),
     // Task management endpoints
     fetchTasks: builder.query<any, void>({
       query: () => "/todos/my-todos",
