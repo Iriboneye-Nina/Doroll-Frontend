@@ -1,10 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Checkbox, Input, Button } from 'antd';
 import { CheckOutlined, UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, EyeOutlined } from '@ant-design/icons';
 import Image from 'next/image'; 
+import {
+    useGetProfileQuery,
+    useGetUserQuery,
+    useUpdateProfileMutation,
+  } from "@/lib/auth/authSlice"; 
+import jwtDecode from 'jwt-decode';
+
+  interface Decoded{
+    userId:string
+  }
+
+  interface UserData{
+    firstName:string,
+    lastName:string,
+    email:string,
+    phone:string
+  }
 
 export default function EditProfile() {
     const [position, setPosition] = useState<'start' | 'end'>('end');
+    const [userId,setUserId]=useState("")
+
+    const [formData,setFormData]=useState<UserData>({
+        firstName:"",
+        lastName:"",
+        email:"",
+        phone:""
+    })
+
+    useEffect(()=>{
+        const token=localStorage.getItem("token")
+        if(token){
+            const decodedToken=jwtDecode<Decoded>(token)
+            setUserId(decodedToken.userId)
+        }
+    },[])
+
+    const {data:fetchUserData,error,isLoading}=useGetUserQuery(userId)
+
+    useEffect(()=>{
+        if(fetchUserData){
+            setFormData({
+                firstName:fetchUserData.firstName,
+               lastName:fetchUserData.lastName,
+                email:fetchUserData.email,
+               phone:fetchUserData.phone
+            })
+            
+        }
+    },[fetchUserData])
+    console.log(formData)
 
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -14,7 +62,7 @@ export default function EditProfile() {
                     <div className="w-16 h-16 rounded w-[64px] h-[48px] object-cover mr-2">
                         <Image src="/profile.jpg" alt="Profile picture" width={96} height={96} className="object-cover"/>
                     </div>
-                    <h1 className="text-xl font-bold">Yves Honore B.</h1>
+                    <h1 className="text-xl font-bold">{formData.firstName}{formData.lastName}</h1>
                     <p className="text-gray-500">yveshonore@awesomity.rw</p>
                 </div>
 

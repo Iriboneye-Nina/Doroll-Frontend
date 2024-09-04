@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useFetchTasksQuery, useDeleteTaskMutation, useUpdateTaskMutation } from "../lib/auth/authSlice";
+import {
+  useFetchTasksQuery,
+  useDeleteTaskMutation,
+  useUpdateTaskMutation,
+} from "../lib/auth/authSlice";
 import {
   CheckOutlined,
   FileOutlined,
@@ -31,9 +35,8 @@ import {
   Typography,
   theme,
   message,
-  Select,
 } from "antd";
-import moment from 'moment';
+import moment from "moment";
 
 type Todo = {
   status: string;
@@ -57,20 +60,15 @@ const DashboardData = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(6);
 
-
   const { data, error, isLoading, refetch } = useFetchTasksQuery();
-
- 
   const [deleteTask] = useDeleteTaskMutation();
-  
+  const [updateTask] = useUpdateTaskMutation();
 
-  
   const filteredData =
     data?.data?.filter((task: Todo) =>
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (selectedStatus ? task.status === selectedStatus : true)
     ) || [];
-
 
   useEffect(() => {
     if (searchTerm && filteredData.length === 0) {
@@ -78,17 +76,14 @@ const DashboardData = () => {
     }
   }, [searchTerm, filteredData]);
 
- 
   const countTasksByStatus = (status: string) => {
     return data?.data?.filter((task: Todo) => task.status === status).length || 0;
   };
-
 
   const {
     token: { colorBgContainer },
   } = theme.useToken();
 
- 
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     setSelectedStatus(e.key);
   };
@@ -121,61 +116,59 @@ const DashboardData = () => {
     setSelectedTodo(null);
   };
 
-  const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>, id: number) => {
+  const handleCheckboxChange = async (task: Todo) => {
+    const updatedStatus = task.status === "DONE" ? "PENDING" : "DONE";
+    const updatedTask = { ...task, status: updatedStatus };
+        console.log(updatedTask)
     try {
-      // Update the status based on the checkbox state
-      const status = e.target.checked ? "DONE" : "PENDING";
+  
+      await updateTask({ id: task.id, data: updatedTask }).unwrap();
+      message.success("Task status updated successfully!");
+  
 
-      await updateTask({ id, status }).unwrap();
-      message.success("Task status updated successfully");
-      refetch(); // Refetch tasks after status change
-    } catch (error) {
-      message.error("Failed to update task status");
+      console.log("Updated Task:", updatedTask);
+  
+      await refetch(); 
+
+      console.log("Refetched Data:", data);
+  
+    } catch (error: any) {
+      message.error(`Failed to update task status: ${error.message}`);
     }
   };
+  
 
   const handleDelete = async (id: number): Promise<void> => {
     try {
       await deleteTask(id).unwrap();
       message.success("Task deleted successfully");
-      refetch(); // Refetch tasks after deletion
+      refetch();
     } catch (error) {
       message.error("Failed to delete the task");
     }
   };
-  const [updateTask] = useUpdateTaskMutation();
 
-  const handleUpdateTask = async (values: any) => {
+  const handleEditSave = async (values: any) => {
     if (selectedTodo) {
+      const updatedTask = {
+        ...selectedTodo,
+        title: values.taskName,
+        deadline: values.selectDate.format("YYYY-MM-DD"),
+        description: values.description,
+      };
+
       try {
-        const taskData = {
-          title: values.taskName.trim(),  
-          description: values.description.trim(),  
-          deadline: values.selectDate ? values.selectDate.toDate() : null, 
-        };
-  
-        if (!taskData.title || !taskData.description || !taskData.deadline) {
-          message.error("All fields are required.");
-          return;
-        }
-  
-        await updateTask({ id: selectedTodo.id, ...taskData }).unwrap();
+        await updateTask({ id: selectedTodo.id, data: updatedTask }).unwrap();
         message.success("Task updated successfully!");
+        setSelectedTodo(null);
         setShowTaskForm(false);
-        refetch(); // Refetch tasks after update
-      } catch (error) {
-        console.error("Update Task Error:", error);
-        message.error("Failed to update task. Please try again.");
+        refetch();
+      } catch (error: any) {
+        message.error(`Failed to update task: ${error.message}`);
       }
-    } else {
-      message.error("No task selected.");
     }
   };
-  
-  
-  
 
-  
   const columns = [
     {
       title: "",
@@ -207,7 +200,10 @@ const DashboardData = () => {
       key: "title",
       width: 150,
       render: (text: string, record: Todo) => (
-        <span style={{ cursor: "pointer", color: "#1890ff" }} onClick={() => handleModalOpen(record)}>
+        <span
+          style={{ cursor: "pointer", color: "#1890ff" }}
+          onClick={() => handleModalOpen(record)}
+        >
           {text}
         </span>
       ),
@@ -217,25 +213,39 @@ const DashboardData = () => {
       dataIndex: "deadline",
       key: "createdDate",
       width: 150,
-      render: (text: string) => <span style={{ fontWeight: "bold" }}>{text}</span>,
+      render: (text: string) => (
+        <span style={{ fontWeight: "bold" }}>{text}</span>
+      ),
     },
     {
       title: "",
       key: "actions",
       render: (text: string, record: Todo) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => { setSelectedTodo(record); setShowTaskForm(true); }} />
-          <Popconfirm title="Are you sure to delete this task?" onConfirm={() => handleDelete(record.id)}>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setSelectedTodo(record);
+              setShowTaskForm(true);
+            }}
+          />
+          <Popconfirm
+            title="Are you sure to delete this task?"
+            onConfirm={() => handleDelete(record.id)}
+          >
             <Button type="link" icon={<DeleteOutlined />} />
           </Popconfirm>
-          <Checkbox checked={record.status === "DONE"} onChange={(e) => handleCheckboxChange(e, record.id)} />
+          <Checkbox
+            checked={record.status === "DONE"}
+            onChange={() => handleCheckboxChange(record)}
+          />
         </Space>
       ),
       width: 150,
     },
   ];
 
-  // Pagination configuration
   const paginationConfig = {
     current: currentPage,
     pageSize: pageSize,
@@ -297,103 +307,51 @@ const DashboardData = () => {
             </Dropdown>
 
             <div className="grid grid-cols-2 gap-2 mt-2">
-              <Card className="shadow-sm rounded-lg border border-gray-200 p-4" style={{ backgroundColor: "#f0f2f5" }}>
-                <Title level={4} className="text-gray-700">
-                  {countTasksByStatus("PENDING")}
-                </Title>
-                <p className="text-gray-500">Pending</p>
+              <Card>
+                <Statistic
+                  title="Pending Todos"
+                  value={countTasksByStatus("PENDING")}
+                />
               </Card>
-
-              <Card className="shadow-sm rounded-lg border border-gray-200 p-4" style={{ backgroundColor: "#f0f2f5" }}>
-                <Title level={4} className="text-gray-700">
-                  {countTasksByStatus("ON-TRACK")}
-                </Title>
-                <p className="text-gray-500">On Track</p>
+              <Card>
+                <Statistic
+                  title="Done Todos"
+                  value={countTasksByStatus("DONE")}
+                />
               </Card>
-
-              <Card className="shadow-sm rounded-lg border border-gray-200 p-4" style={{ backgroundColor: "#f0f2f5" }}>
-                <Title level={4} className="text-gray-700">
-                  {countTasksByStatus("OFF-TRACK")}
-                </Title>
-                <p className="text-gray-500">Off Track</p>
+              <Card>
+                <Statistic
+                  title="Off-Track Todos"
+                  value={countTasksByStatus("OFF-TRACK")}
+                />
               </Card>
-
-              <Card className="shadow-sm rounded-lg border border-gray-200 p-4" style={{ backgroundColor: "#f0f2f5" }}>
-                <Title level={4} className="text-gray-700">
-                  {countTasksByStatus("DONE")}
-                </Title>
-                <p className="text-gray-500">Done</p>
+              <Card>
+                <Statistic
+                  title="On-Track Todos"
+                  value={countTasksByStatus("ON-TRACK")}
+                />
               </Card>
             </div>
           </div>
         </Sider>
-
-        <Layout>
+        <Layout style={{ padding: "0 24px", minHeight: 280 }}>
           <Content
             style={{
-              padding: "20px",
-              marginLeft: 10,
-              marginTop: 20,
+              padding: 24,
+              margin: 0,
+              minHeight: 280,
             }}
           >
             <Table
               columns={columns}
               dataSource={filteredData}
               pagination={paginationConfig}
-              rowKey="id"
-              scroll={{ x: 600 }}
+              rowKey={(record) => record.id.toString()}
             />
           </Content>
         </Layout>
       </Layout>
 
-      {/* Update Task Modal */}
-      <Modal
-  title="Update Task"
-  visible={showTaskForm}
-  onCancel={() => setShowTaskForm(false)}
-  footer={null}
->
-  <Form
-    initialValues={{
-      taskName: selectedTodo?.title,
-      description: selectedTodo?.description,
-      selectDate: selectedTodo?.deadline ? moment(selectedTodo?.deadline) : null,
-      status: selectedTodo?.status,  // Set initial value for status
-    }}
-    onFinish={handleUpdateTask}
-  >
-    <Form.Item
-      name="taskName"
-      label="Task Name"
-      rules={[{ required: true, message: "Please enter task name" }]}
-    >
-      <Input />
-    </Form.Item>
-    <Form.Item
-      name="description"
-      label="Description"
-      rules={[{ required: true, message: "Please enter a description" }]}  // Added required rule
-    >
-      <Input.TextArea rows={4} />
-    </Form.Item>
-    <Form.Item
-      name="selectDate"
-      label="Deadline"
-      rules={[{ required: true, message: "Please select a deadline" }]}
-    >
-      <DatePicker />
-    </Form.Item>
-    <Form.Item>
-      <Button type="primary" htmlType="submit">
-        Update Task
-      </Button>
-    </Form.Item>
-  </Form>
-</Modal>
-
-
-      {/* Task Details Modal */}
       <Modal
         title="Task Details"
         visible={isModalVisible}
@@ -402,13 +360,60 @@ const DashboardData = () => {
       >
         {selectedTodo && (
           <div>
-            <p><strong>Title:</strong> {selectedTodo.title}</p>
-            <p><strong>Description:</strong> {selectedTodo.description}</p>
-            <p><strong>Content:</strong> {selectedTodo.content}</p>
-            <p><strong>Created Date:</strong> {selectedTodo.createdDate}</p>
+            <Title level={5}>Task: {selectedTodo.title}</Title>
+            <p>Status: {selectedTodo.status}</p>
+            <p>Description: {selectedTodo.description}</p>
+            <p>Content: {selectedTodo.content}</p>
+            <p>Created Date: {moment(selectedTodo.createdDate).format("YYYY-MM-DD")}</p>
+            {selectedTodo.deadline && <p>Deadline: {moment(selectedTodo.deadline).format("YYYY-MM-DD")}</p>}
           </div>
         )}
       </Modal>
+
+      {showTaskForm && selectedTodo && (
+        <Modal
+          title="Edit Task"
+          visible={showTaskForm}
+          onCancel={() => setShowTaskForm(false)}
+          footer={null}
+        >
+          <Form
+            initialValues={{
+              taskName: selectedTodo.title,
+              selectDate: selectedTodo.deadline ? moment(selectedTodo.deadline) : null,
+              description: selectedTodo.description,
+            }}
+            onFinish={handleEditSave}
+          >
+            <Form.Item
+              name="taskName"
+              label="Task Name"
+              rules={[{ required: true, message: "Please input the task name!" }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="selectDate"
+              label="Deadline"
+              rules={[{ required: true, message: "Please select the deadline!" }]}
+            >
+              <DatePicker />
+            </Form.Item>
+            <Form.Item
+              name="description"
+              label="Description"
+              rules={[{ required: true, message: "Please input the description!" }]}
+            >
+              <Input.TextArea />
+            </Form.Item>
+            <Form.Item>
+              <Button type="primary" htmlType="submit">
+                Save
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
+      )}
     </Layout>
   );
 };

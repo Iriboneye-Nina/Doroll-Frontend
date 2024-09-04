@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, Modal, Form, Input, DatePicker, Card, message } from 'antd';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-
 import jwtDecode from 'jwt-decode';
 import { useAddTaskMutation, useFetchTasksQuery } from '@/lib/auth/authSlice';
 
@@ -67,9 +66,11 @@ const Navbar = (props: any) => {
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [form] = Form.useForm(); // Form instance for resetting fields
   const [addTask] = useAddTaskMutation();
   const router = useRouter();
   const { data, error, isLoading, refetch } = useFetchTasksQuery();
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -87,11 +88,11 @@ const Navbar = (props: any) => {
     setShowProfileForm(prev => !prev);
   };
 
-  const handleAddTask = async (values:any) => {
+  const handleAddTask = async (values: any) => {
     try {
       const currentDate = new Date();
       const deadlineDate = new Date(values.selectDate.format('YYYY-MM-DD'));
-  
+
       let status;
       if (deadlineDate < currentDate) {
         status = 'OFF_TRACK'; 
@@ -100,20 +101,21 @@ const Navbar = (props: any) => {
       } else {
         status = 'PENDING'; 
       }
-  
+
       const taskData = {
         title: values.taskName,
         description: values.description,
         deadline: values.selectDate.format('YYYY-MM-DD'),
         status: status 
       };
-  
+
       await addTask(taskData).unwrap();
-  
+
       message.success('Task added successfully!');
-      refetch()
+      refetch(); 
+      form.resetFields(); 
       setShowTaskForm(false);
-  
+
     } catch (error) {
       console.error('Failed to add task:', error);
       message.error('Failed to add task. Please try again.');
@@ -161,7 +163,7 @@ const Navbar = (props: any) => {
               className="text-[10px] border py-[13px] px-[5px] rounded-tr-[5px] rounded-br-[5px] cursor-pointer"
             />
             {/* Display the username */}
-        
+            {username && <span className="ml-2 text-sm">{username}</span>}
           </div>
         </div>
       </nav>
@@ -177,7 +179,7 @@ const Navbar = (props: any) => {
         footer={null}
         closable={false}
       >
-        <Form name="taskForm" layout="vertical" onFinish={handleAddTask}>
+        <Form form={form} name="taskForm" layout="vertical" onFinish={handleAddTask}>
           <div className="flex justify-between gap-4">
             <Form.Item
               label="Title"
@@ -201,13 +203,13 @@ const Navbar = (props: any) => {
             name="description"
             rules={[{ required: true, message: 'Please enter a description' }]}
           >
-            <Input.TextArea placeholder="Enter description" />
+            <Input.TextArea rows={4} placeholder="Enter description" />
           </Form.Item>
-          <div className="flex justify-end mt-4">
-            <Button type="primary" htmlType="submit">
+          <Form.Item>
+            <Button type="primary" htmlType="submit" className="w-full">
               Add Task
             </Button>
-          </div>
+          </Form.Item>
         </Form>
       </Modal>
     </>

@@ -43,7 +43,7 @@ export const apiSlice = createApi({
     }),
     getUser: builder.query<any, string>({
       query: (id) => `users/${id}`,
-  }),
+    }),
     forgetPassword: builder.mutation<any, { email: string }>({
       query: (emailData) => ({
         url: "/auth/forgot-password",
@@ -52,9 +52,8 @@ export const apiSlice = createApi({
       }),
     }),
     fetchUserProfile: builder.query<any, void>({
-      query: () => "/auth/me", 
+      query: () => "/auth/me",
     }),
-   
     fetchTasks: builder.query<any, void>({
       query: () => "/todos/my-todos",
     }),
@@ -64,11 +63,18 @@ export const apiSlice = createApi({
         method: "POST",
         body: taskData,
       }),
-      
     }),
     updateTask: builder.mutation<any, { id: string; data: any }>({
       query: ({ id, data }) => ({
         url: `/todos/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+    }),
+
+    updateProfile: builder.mutation({
+      query: ({ id, ...data }:{id:string}) => ({
+        url: `/user/update/${id}`,
         method: "PUT",
         body: data,
       }),
@@ -79,6 +85,21 @@ export const apiSlice = createApi({
         method: "DELETE",
       }),
     }),
+    resetPassword: builder.mutation<
+      any,
+      { token: string; newPassword: string }
+    >({
+      query: (body) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body,
+      }),
+    }),
+    getProfile: builder.query<any, void>({
+      query: () => "user/profile",
+    }),
+
+    
   }),
 });
 
@@ -90,4 +111,8 @@ export const {
   useAddTaskMutation,
   useUpdateTaskMutation,
   useDeleteTaskMutation,
+  useResetPasswordMutation,
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useGetUserQuery,
 } = apiSlice;
