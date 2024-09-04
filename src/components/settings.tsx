@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Checkbox, Input, Button } from 'antd';
+import { Checkbox, Input, Button, notification, message } from 'antd';
 import { CheckOutlined, UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, EyeOutlined } from '@ant-design/icons';
 import Image from 'next/image'; 
 import {
@@ -38,7 +38,13 @@ export default function EditProfile() {
             setUserId(decodedToken.userId)
         }
     },[])
-
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
     const {data:fetchUserData,error,isLoading}=useGetUserQuery(userId)
 
     useEffect(()=>{
@@ -53,7 +59,21 @@ export default function EditProfile() {
         }
     },[fetchUserData])
     console.log(formData)
-
+    const [updateProfile]= useUpdateProfileMutation()
+    const handleSaveChanges = async () => {
+        if (!userId) {
+            message.error("User ID is not available");
+            return;
+        }
+        try {
+            const response = await updateProfile({ id: userId, ...formData }).unwrap();
+            message.success(response.message);
+        } catch (error) {
+            notification.error({
+                message: 'Failed to update profile'
+            })
+        }
+    };
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100">
             <div className="w-[500px] bg-white p-8 rounded-lg shadow-md">
@@ -77,6 +97,7 @@ export default function EditProfile() {
                                     type="text"
                                     prefix={<UserOutlined className="text-[#C0D310]" />}
                                     placeholder="Enter first name"
+                                    onChange={handleInputChange}
                                 />
                             </label>
                         </div>
@@ -87,6 +108,7 @@ export default function EditProfile() {
                                     type="text"
                                     prefix={<UserOutlined className="text-[#C0D310]" />}
                                     placeholder="Enter last name"
+                                    onChange={handleInputChange}
                                 />
                             </label>
                         </div>
@@ -99,6 +121,7 @@ export default function EditProfile() {
                                     type="email"
                                     prefix={<MailOutlined className="text-[#C0D310]" />}
                                     placeholder="Enter email"
+                                    onChange={handleInputChange}
                                 />
                             </label>
                         </div>
@@ -109,6 +132,7 @@ export default function EditProfile() {
                                     type="tel"
                                     prefix={<PhoneOutlined className="text-[#C0D310]" />}
                                     placeholder="250 --- --- ---"
+                                    onChange={handleInputChange}
                                 />
                             </label>
                         </div>
@@ -118,6 +142,7 @@ export default function EditProfile() {
                             type="primary"
                             icon={<CheckOutlined />}
                             iconPosition={position}
+                            onClick={handleSaveChanges}
                         >
                             Save Changes
                         </Button>
