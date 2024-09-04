@@ -1,119 +1,109 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  useFetchTasksQuery,
+  useDeleteTaskMutation,
+  useUpdateTaskMutation,
+} from "../lib/auth/authSlice";
 import {
   CheckOutlined,
   FileOutlined,
   InfoCircleOutlined,
   FilterOutlined,
   DownOutlined,
-  DragOutlined,
-  SearchOutlined,
-  LogoutOutlined,
-  HolderOutlined,
   EditOutlined,
-   DeleteOutlined,
+  HolderOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+  PlusOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import {
   Button,
   Card,
-  Checkbox, 
+  Checkbox,
+  DatePicker,
   Dropdown,
+  Form,
   Input,
   Layout,
   MenuProps,
   Modal,
+  Popconfirm,
   Space,
   Statistic,
+  Table,
   Typography,
   theme,
+  message,
 } from "antd";
+import moment from "moment";
 
 type Todo = {
+  status: string;
   id: number;
   title: string;
   description: string;
   content: string;
   createdDate: string;
+  deadline?: string;
 };
-
-const todos: Todo[] = [
-  {
-    id: 1,
-    title: "Finish the project report",
-    createdDate: "2024-08-10",
-    description: "Complete the final draft of the report by Monday",
-    content: ""
-  },
-  {
-    id: 2,
-    title: "Team meeting",
-    content: "Get task",
-    createdDate: "2024-08-11",
-    description: "Attend the weekly team sync-up",
-   
-  },
-  {
-    id: 3,
-    title: "Team meeting",
-    createdDate: "2024-08-11",
-    content: "Get task",
-    description: "Attend the weekly team sync-up",
-    
-  },
-  {
-    id: 4,
-    title: "Team meeting",
-    createdDate: "2024-08-11",
-    content: "Get task",
-    description: "Attend the weekly team sync-up",
-   
-  },
-  {
-    id: 5,
-    title: "Team meeting",
-    content: "Get task",
-    createdDate: "2024-08-11",
-    description: "Attend the weekly team sync-up",
-  },
-  {
-    id: 6,
-    title: "Team meeting",
-    content: "Get task",
-    createdDate: "2024-08-11",
-    description: "Attend the weekly team sync-up",
-  },
-  {
-    id: 7,
-    title: "Team meeting",
-    content: "Get task",
-    createdDate: "2024-08-11",
-    description: "Attend the weekly team sync-up",
-  },
-];
 
 const { Title } = Typography;
 const { Header, Content, Sider } = Layout;
 
 const DashboardData = () => {
+  const [showTaskForm, setShowTaskForm] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(6);
+
+  const { data, error, isLoading, refetch } = useFetchTasksQuery();
+  const [deleteTask] = useDeleteTaskMutation();
+  const [updateTask] = useUpdateTaskMutation();
+
+  const filteredData =
+    data?.data?.filter((task: Todo) =>
+      task.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (selectedStatus ? task.status === selectedStatus : true)
+    ) || [];
+
+  useEffect(() => {
+    if (searchTerm && filteredData.length === 0) {
+      message.info("No tasks found with the given search term.");
+    }
+  }, [searchTerm, filteredData]);
+
+  const countTasksByStatus = (status: string) => {
+    return data?.data?.filter((task: Todo) => task.status === status).length || 0;
+  };
 
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: { colorBgContainer },
   } = theme.useToken();
 
-  const handleMenuClick: MenuProps['onClick'] = (e) => {
-    console.log("click", e);
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    setSelectedStatus(e.key);
   };
 
   const menuProps = {
     items: [
-      {
-        label: "Logout",
-        key: "1",
-        icon: <LogoutOutlined />,
-      },
+      { label: "ON-TRACK", key: "ON-TRACK" },
+      { label: "OFF-TRACK", key: "OFF-TRACK" },
+      { label: "DONE", key: "DONE" },
+      { label: "PENDING", key: "PENDING" },
     ],
     onClick: handleMenuClick,
+  };
+
+  const filterProps = {
+    items: [
+      { label: "This Week", key: "this_week" },
+      { label: "This Month", key: "this_month" },
+      { label: "This Year", key: "this_year" },
+    ],
   };
 
   const handleModalOpen = (todo: Todo) => {
@@ -126,21 +116,162 @@ const DashboardData = () => {
     setSelectedTodo(null);
   };
 
+  const handleCheckboxChange = async (task: Todo) => {
+    const updatedStatus = task.status === "DONE" ? "PENDING" : "DONE";
+    const updatedTask = { ...task, status: updatedStatus };
+        console.log(updatedTask)
+    try {
+  
+      await updateTask({ id: task.id, data: updatedTask }).unwrap();
+      message.success("Task status updated successfully!");
+  
+
+      console.log("Updated Task:", updatedTask);
+  
+      await refetch(); 
+
+      console.log("Refetched Data:", data);
+  
+    } catch (error: any) {
+      message.error(`Failed to update task status: ${error.message}`);
+    }
+  };
+  
+
+  const handleDelete = async (id: number): Promise<void> => {
+    try {
+      await deleteTask(id).unwrap();
+      message.success("Task deleted successfully");
+      refetch();
+    } catch (error) {
+      message.error("Failed to delete the task");
+    }
+  };
+
+  const handleEditSave = async (values: any) => {
+    if (selectedTodo) {
+      const updatedTask = {
+        ...selectedTodo,
+        title: values.taskName,
+        deadline: values.selectDate.format("YYYY-MM-DD"),
+        description: values.description,
+      };
+
+      try {
+        await updateTask({ id: selectedTodo.id, data: updatedTask }).unwrap();
+        message.success("Task updated successfully!");
+        setSelectedTodo(null);
+        setShowTaskForm(false);
+        refetch();
+      } catch (error: any) {
+        message.error(`Failed to update task: ${error.message}`);
+      }
+    }
+  };
+
+  const columns = [
+    {
+      title: "",
+      key: "icon",
+      render: (text: any, record: Todo) => (
+        <HolderOutlined
+          style={{ fontSize: "16px", color: "#1890ff", cursor: "pointer" }}
+          onClick={() => handleModalOpen(record)}
+        />
+      ),
+      width: 50,
+    },
+    {
+      title: "",
+      dataIndex: "number",
+      key: "number",
+      render: (text: any, record: any, index: number) => index + 1,
+      width: 50,
+    },
+    {
+      title: "",
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+    },
+    {
+      title: "",
+      dataIndex: "title",
+      key: "title",
+      width: 150,
+      render: (text: string, record: Todo) => (
+        <span
+          style={{ cursor: "pointer", color: "#1890ff" }}
+          onClick={() => handleModalOpen(record)}
+        >
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: "",
+      dataIndex: "deadline",
+      key: "createdDate",
+      width: 150,
+      render: (text: string) => (
+        <span style={{ fontWeight: "bold" }}>{text}</span>
+      ),
+    },
+    {
+      title: "",
+      key: "actions",
+      render: (text: string, record: Todo) => (
+        <Space>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setSelectedTodo(record);
+              setShowTaskForm(true);
+            }}
+          />
+          <Popconfirm
+            title="Are you sure to delete this task?"
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Button type="link" icon={<DeleteOutlined />} />
+          </Popconfirm>
+          <Checkbox
+            checked={record.status === "DONE"}
+            onChange={() => handleCheckboxChange(record)}
+          />
+        </Space>
+      ),
+      width: 150,
+    },
+  ];
+
+  const paginationConfig = {
+    current: currentPage,
+    pageSize: pageSize,
+    total: filteredData.length,
+    onChange: (page: number) => setCurrentPage(page),
+  };
+
   return (
     <Layout>
-      <div>
-        <div
-          className="bg-white h-14 flex justify-between items-center px-6 py-2 mx-auto rounded-lg mt-5"
-          style={{ width: "95%", marginLeft: "50px" }}
-        >
-          <span className="text-lg">Pending tasks - 7</span>
+      <div className="p-2">
+        <div className="bg-white h-14 flex justify-between items-center px-6 py-1 rounded-lg mt-1 mx-auto max-w-screen-lg">
+          <span className="text-lg">
+            {isLoading
+              ? "Loading tasks..."
+              : error
+              ? "Failed to load tasks"
+              : `Pending tasks - ${filteredData.length}`}
+          </span>
           <Input
             prefix={<SearchOutlined />}
             placeholder="Search"
             className="w-1/3 mx-4"
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
           <Dropdown menu={menuProps}>
-            <Button className="flex items-center border border-gray-200 p-2 rounded-l-md cursor-pointer">
+            <Button className="flex items-center border border-gray-200 p-2 rounded-md cursor-pointer">
               <Space>
                 <FilterOutlined className="text-lg" />
                 <span className="text-sm">Filter List</span>
@@ -154,200 +285,135 @@ const DashboardData = () => {
 
       <Layout>
         <Sider
-         
           width={350}
-          
           style={{
-           
-             background: colorBgContainer,
+            background: colorBgContainer,
             margin: "20px 0px 0px 50px",
           }}
         >
           <div className="p-2">
-            <Title level={5}>Summary</Title>
-            <Dropdown menu={menuProps}>
-            <Button style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px" }}>
-            <FilterOutlined style={{ marginRight: "8px" }} />
-      
-             <div>
+            <Title level={5} className="text-white">
+              Summary
+            </Title>
+            <Dropdown menu={filterProps}>
+              <Button className="w-full flex justify-between items-center p-2 rounded-md bg-white border border-gray-200">
+                <FilterOutlined className="text-lg mr-2" />
                 <span>This Week</span>
-              </div>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                  <div style={{ borderLeft: "1px solid #d9d9d9", height: "16px", marginRight: "8px" }}></div>
-                           <DownOutlined />
-                      </div>
-                 </Button>
-               </Dropdown>
-
-            {/* Cards Container */}
-            <div className="grid grid-cols-2  gap-2 mt-2">
-              {/* First Card */}
-              <Card
-                className="shadow-sm rounded-lg"
-                style={{ borderRadius: "6px", border: "1px solid #e0e0e0", padding: "8px" }}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-start">
-                    <Statistic
-                      value={11}
-                      precision={0}
-                      valueStyle={{ fontSize: "20px", color: "#1f2937" }}
-                    />
-                    <span
-                      style={{ fontSize: "10px", color: "#1f2937", position: "relative", top: "-8px", marginLeft: "2px" }}
-                    >
-                      +10%
-                    </span>
-                  </div>
-                  <FileOutlined style={{ fontSize: "20px", color: "#9ca3af" }} />
+                <div className="flex items-center">
+                  <div className="border-l border-gray-300 h-4 mx-2"></div>
+                  <DownOutlined />
                 </div>
-                <div className="mt-1 text-gray-500 text-xs">Total Tasks</div>
+              </Button>
+            </Dropdown>
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <Card>
+                <Statistic
+                  title="Pending Todos"
+                  value={countTasksByStatus("PENDING")}
+                />
               </Card>
-
-              {/* Second Card */}
-              <Card
-                className="shadow-sm rounded-lg"
-                style={{ borderRadius: "6px", border: "1px solid #e0e0e0", padding: "8px" }}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-start">
-                    <Statistic
-                      value={1}
-                      precision={0}
-                      valueStyle={{ fontSize: "20px", color: "#1f2937" }}
-                    />
-                    <span
-                      style={{ fontSize: "10px", color: "#1f2937", position: "relative", top: "-8px", marginLeft: "2px" }}
-                    >
-                      -10%
-                    </span>
-                  </div>
-                  <CheckOutlined style={{ fontSize: "20px", color: "#9ca3af" }} />
-                </div>
-                <div className="mt-1 text-gray-500 text-xs">Completed</div>
+              <Card>
+                <Statistic
+                  title="Done Todos"
+                  value={countTasksByStatus("DONE")}
+                />
               </Card>
-
-              {/* Third Card */}
-              <Card
-                className="shadow-sm rounded-lg"
-                style={{ borderRadius: "6px", border: "1px solid #e0e0e0", padding: "8px" }}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-start">
-                    <Statistic
-                      value={7}
-                      precision={0}
-                      valueStyle={{ fontSize: "20px", color: "#1f2937" }}
-                    />
-                    <span
-                      style={{ fontSize: "10px", color: "#1f2937", position: "relative", top: "-8px", marginLeft: "2px" }}
-                    >
-                      +10%
-                    </span>
-                  </div>
-                  <InfoCircleOutlined style={{ fontSize: "20px", color: "#9ca3af" }} />
-                </div>
-                <div className="mt-1 text-gray-500 text-xs">Pending</div>
+              <Card>
+                <Statistic
+                  title="Off-Track Todos"
+                  value={countTasksByStatus("OFF-TRACK")}
+                />
               </Card>
-
-              {/* Fourth Card */}
-              <Card
-                className="shadow-sm rounded-lg"
-                style={{ borderRadius: "6px", border: "1px solid #e0e0e0", padding: "8px" }}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-start">
-                    <Statistic
-                      value={3}
-                      precision={0}
-                      valueStyle={{ fontSize: "20px", color: "#1f2937" }}
-                    />
-                    <span
-                      style={{ fontSize: "10px", color: "#1f2937", position: "relative", top: "-8px", marginLeft: "2px" }}
-                    >
-                      +10%
-                    </span>
-                  </div>
-                  <InfoCircleOutlined style={{ fontSize: "20px", color: "#9ca3af" }} />
-                </div>
-                <div className="mt-1 text-gray-500 text-xs">Off-Track</div>
+              <Card>
+                <Statistic
+                  title="On-Track Todos"
+                  value={countTasksByStatus("ON-TRACK")}
+                />
               </Card>
             </div>
-
-            {/* Additional Section */}
-            <Card
-              className="shadow-sm bg-gray-100 rounded-lg mt-4"
-              style={{ borderRadius: "6px", border: "1px solid #e0e0e0", padding: "8px" }}
-            >
-              <div className="text-gray-500 text-xs">Daily Tip:</div>
-              <div className="mt-1 flex items-center">
-                <DragOutlined style={{ fontSize: "20px", color: "#9ca3af" }} />
-                <span className="ml-2 text-xs">Use this icon on the left to re-arrange tasks</span>
-              </div>
-            </Card>
           </div>
         </Sider>
-
-        <Layout style={{ padding: "0 24px 24px" }}>
+        <Layout style={{ padding: "0 24px", minHeight: 280 }}>
           <Content
             style={{
               padding: 24,
-              marginTop: "20px",
+              margin: 0,
               minHeight: 280,
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
             }}
           >
-            <div className="flex flex-col gap-1">
-              {todos.map((todo) => (
-                <div
-                  key={todo.id}
-                  className="flex justify-between items-center bg-gray-100 p-4 rounded-lg"
-                >
-                  <HolderOutlined onClick={() => handleModalOpen(todo)} />
-                  <div className="w-1/12">{todo.id}</div>
-                  <div className="w-2/12">{todo.content}</div>
-                  <div className="w-2/12">{todo.createdDate}</div>
-                  <div className="w-2/12">{todo.title}</div>
-                  <div className="w-2/12 gap-12">
-                    <Button
-                      icon={<EditOutlined />}
-                      className="mr-2"
-                    />
-                    <Button  icon={<DeleteOutlined />} />
-                  </div>
-                  <div>
-                    <Checkbox/>
-                  </div>
-                  </div>
-               
-              ))}
-            </div>
-
-            {/* Modal for Todo Details */}
-            {selectedTodo && (
-              <Modal
-                title="Todo Details"
-                visible={isModalVisible}
-                onCancel={handleModalClose}
-                footer={null}
-              >
-              <div className="bg-white shadow-lg rounded-lg p-6 max-w-sm mx-auto">
-                 <h4 className="text-xl font-semibold mb-4">{selectedTodo.title}</h4>
-                   <div className="flex items-center gap-5 mb-2">
-                     <p className="text-gray-600"><strong>Created Date:</strong> {selectedTodo.createdDate}</p>
-                   </div>
-                    <div className="mb-4">
-                        <p className="text-gray-700"><strong>Description:</strong> {selectedTodo.description}</p>
-                     </div>
-                            
-                       </div>
-                        
-              </Modal>
-            )}
+            <Table
+              columns={columns}
+              dataSource={filteredData}
+              pagination={paginationConfig}
+              rowKey={(record) => record.id.toString()}
+            />
           </Content>
         </Layout>
       </Layout>
+
+      <Modal
+        title="Task Details"
+        visible={isModalVisible}
+        onCancel={handleModalClose}
+        footer={null}
+      >
+        {selectedTodo && (
+          <div>
+            <Title level={5}>Task: {selectedTodo.title}</Title>
+            <p>Status: {selectedTodo.status}</p>
+            <p>Description: {selectedTodo.description}</p>
+            <p>Content: {selectedTodo.content}</p>
+            <p>Created Date: {moment(selectedTodo.createdDate).format("YYYY-MM-DD")}</p>
+            {selectedTodo.deadline && <p>Deadline: {moment(selectedTodo.deadline).format("YYYY-MM-DD")}</p>}
+          </div>
+        )}
+      </Modal>
+
+      {showTaskForm && selectedTodo && (
+        <Modal
+          title="Edit Task"
+          visible={showTaskForm}
+          onCancel={() => setShowTaskForm(false)}
+          footer={null}
+        >
+          <Form
+            initialValues={{
+              taskName: selectedTodo.title,
+              selectDate: selectedTodo.deadline ? moment(selectedTodo.deadline) : null,
+              description: selectedTodo.description,
+            }}
+            onFinish={handleEditSave}
+          >
+            <Form.Item
+              name="taskName"
+              label="Task Name"
+              rules={[{ required: true, message: "Please input the task name!" }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="selectDate"
+              label="Deadline"
+              rules={[{ required: true, message: "Please select the deadline!" }]}
+            >
+              <DatePicker />
+            </Form.Item>
+            <Form.Item
+              name="description"
+              label="Description"
+              rules={[{ required: true, message: "Please input the description!" }]}
+            >
+              <Input.TextArea />
+            </Form.Item>
+            <Form.Item>
+              <Button type="primary" htmlType="submit">
+                Save
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
+      )}
     </Layout>
   );
 };
