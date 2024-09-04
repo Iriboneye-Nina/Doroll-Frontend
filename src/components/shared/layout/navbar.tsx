@@ -1,9 +1,11 @@
+// Import necessary libraries and components
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, Form, Input, DatePicker, Card, message } from 'antd';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
+
 import jwtDecode from 'jwt-decode';
-import { useAddTaskMutation } from '@/lib/auth/authSlice';
+import { useAddTaskMutation, useFetchTasksQuery } from '@/lib/auth/authSlice';
 
 const HomeOutlined = dynamic(() => import('@ant-design/icons/HomeOutlined'), { ssr: false });
 const PlusOutlined = dynamic(() => import('@ant-design/icons/PlusOutlined'), { ssr: false });
@@ -17,6 +19,7 @@ const LockOutlined = dynamic(() => import('@ant-design/icons/LockOutlined'), { s
 const LogoutOutlined = dynamic(() => import('@ant-design/icons/LogoutOutlined'), { ssr: false });
 const DeleteOutlined = dynamic(() => import('@ant-design/icons/DeleteOutlined'), { ssr: false });
 
+// Profile Modal component
 const ProfileModal: React.FC<{ onClose: () => void; email: string; onLogout: () => void }> = ({ onClose, email, onLogout }) => (
   <Card className="absolute top-12 right-0 p-4 bg-white shadow-md rounded-md" style={{ zIndex: 111 }}>
     <div className="flex flex-col">
@@ -48,10 +51,6 @@ const ProfileModal: React.FC<{ onClose: () => void; email: string; onLogout: () 
         </div>
         <div className="w-full mb-[16px] border-t border-gray-200" />
         <div className="flex items-center mb-2">
-          <DeleteOutlined className="text-lg mr-2" />
-         
-        </div>
-        <div className="flex items-center mb-2">
           <LogoutOutlined className="text-lg mr-2" />
           <Button type="link" onClick={onLogout}>
             Logout
@@ -62,19 +61,22 @@ const ProfileModal: React.FC<{ onClose: () => void; email: string; onLogout: () 
   </Card>
 );
 
+// Navbar component
 const Navbar = (props: any) => {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [addTask] = useAddTaskMutation();
   const router = useRouter();
-
+  const { data, error, isLoading, refetch } = useFetchTasksQuery();
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const decodedToken: any = jwtDecode(token);
         setEmail(decodedToken.email);
+        setUsername(decodedToken.username);
       } catch (error) {
         console.error('Failed to decode token:', error);
       }
@@ -85,23 +87,33 @@ const Navbar = (props: any) => {
     setShowProfileForm(prev => !prev);
   };
 
-  const handleAddTask = async (values: any) => {
+  const handleAddTask = async (values:any) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error('No token found');
+      const currentDate = new Date();
+      const deadlineDate = new Date(values.selectDate.format('YYYY-MM-DD'));
+  
+      let status;
+      if (deadlineDate < currentDate) {
+        status = 'OFF_TRACK'; 
+      } else if (deadlineDate.toDateString() === currentDate.toDateString()) {
+        status = 'ON_TRACK'; 
+      } else {
+        status = 'PENDING'; 
       }
-
+  
       const taskData = {
         title: values.taskName,
         description: values.description,
-        deadline: values.selectDate.format('YYYY-MM-DD')
+        deadline: values.selectDate.format('YYYY-MM-DD'),
+        status: status 
       };
-
+  
       await addTask(taskData).unwrap();
-
+  
       message.success('Task added successfully!');
+      refetch()
       setShowTaskForm(false);
+  
     } catch (error) {
       console.error('Failed to add task:', error);
       message.error('Failed to add task. Please try again.');
@@ -111,6 +123,7 @@ const Navbar = (props: any) => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setEmail(null);
+    setUsername(null); 
     router.push('/login');
     message.success('Logged out successfully!');
   };
@@ -147,6 +160,8 @@ const Navbar = (props: any) => {
               onClick={toggleProfileForm}
               className="text-[10px] border py-[13px] px-[5px] rounded-tr-[5px] rounded-br-[5px] cursor-pointer"
             />
+            {/* Display the username */}
+        
           </div>
         </div>
       </nav>
@@ -165,7 +180,7 @@ const Navbar = (props: any) => {
         <Form name="taskForm" layout="vertical" onFinish={handleAddTask}>
           <div className="flex justify-between gap-4">
             <Form.Item
-              label="Task Name"
+              label="Title"
               name="taskName"
               className="w-1/2"
               rules={[{ required: true, message: 'Please enter the task name' }]}
@@ -173,7 +188,7 @@ const Navbar = (props: any) => {
               <Input placeholder="Enter title" prefix={<FileTextOutlined />} />
             </Form.Item>
             <Form.Item
-              label="Select Date"
+              label="Due Date"
               name="selectDate"
               className="w-1/2"
               rules={[{ required: true, message: 'Please select a date' }]}
@@ -181,13 +196,16 @@ const Navbar = (props: any) => {
               <DatePicker format="YYYY-MM-DD" placeholder="MM/DD/YYYY" />
             </Form.Item>
           </div>
-          <Form.Item label="Description" name="description">
+          <Form.Item
+            label="Description"
+            name="description"
+            rules={[{ required: true, message: 'Please enter a description' }]}
+          >
             <Input.TextArea placeholder="Enter description" />
           </Form.Item>
           <div className="flex justify-end mt-4">
-            <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
-              <span>Add Task</span>
-              <PlusOutlined />
+            <Button type="primary" htmlType="submit">
+              Add Task
             </Button>
           </div>
         </Form>

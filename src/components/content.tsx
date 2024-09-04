@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useFetchTasksQuery} from "../lib/auth/authSlice";
+import React, { useState, useEffect } from "react";
+import { useFetchTasksQuery, useDeleteTaskMutation, useUpdateTaskMutation } from "../lib/auth/authSlice";
 import {
   CheckOutlined,
   FileOutlined,
@@ -30,7 +30,10 @@ import {
   Table,
   Typography,
   theme,
+  message,
+  Select,
 } from "antd";
+import moment from 'moment';
 
 type Todo = {
   status: string;
@@ -39,6 +42,7 @@ type Todo = {
   description: string;
   content: string;
   createdDate: string;
+  deadline?: string;
 };
 
 const { Title } = Typography;
@@ -53,27 +57,38 @@ const DashboardData = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(6);
 
-  // Fetch tasks
-  const { data, error, isLoading } = useFetchTasksQuery();
 
-  // Filter tasks by status
+  const { data, error, isLoading, refetch } = useFetchTasksQuery();
+
+ 
+  const [deleteTask] = useDeleteTaskMutation();
+  
+
+  
   const filteredData =
     data?.data?.filter((task: Todo) =>
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (selectedStatus ? task.status === selectedStatus : true)
     ) || [];
 
-  // Count tasks by status
+
+  useEffect(() => {
+    if (searchTerm && filteredData.length === 0) {
+      message.info("No tasks found with the given search term.");
+    }
+  }, [searchTerm, filteredData]);
+
+ 
   const countTasksByStatus = (status: string) => {
     return data?.data?.filter((task: Todo) => task.status === status).length || 0;
   };
 
-  // Destructure tokens for styling
+
   const {
     token: { colorBgContainer },
   } = theme.useToken();
 
-  // Menu and filter items
+ 
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     setSelectedStatus(e.key);
   };
@@ -106,27 +121,68 @@ const DashboardData = () => {
     setSelectedTodo(null);
   };
 
-  const handleCheckboxChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    id: number
-  ) => {
-    // Implement the functionality for toggling the task status here
-    console.log(`Toggling task with id: ${id}, checked: ${e.target.checked}`);
+  const handleCheckboxChange = async (e: React.ChangeEvent<HTMLInputElement>, id: number) => {
+    try {
+      // Update the status based on the checkbox state
+      const status = e.target.checked ? "DONE" : "PENDING";
+
+      await updateTask({ id, status }).unwrap();
+      message.success("Task status updated successfully");
+      refetch(); // Refetch tasks after status change
+    } catch (error) {
+      message.error("Failed to update task status");
+    }
   };
 
-  const handleDelete = (id: number): void => {
-    // Implement the delete functionality here
-    console.log(`Deleting task with id: ${id}`);
+  const handleDelete = async (id: number): Promise<void> => {
+    try {
+      await deleteTask(id).unwrap();
+      message.success("Task deleted successfully");
+      refetch(); // Refetch tasks after deletion
+    } catch (error) {
+      message.error("Failed to delete the task");
+    }
   };
+  const [updateTask] = useUpdateTaskMutation();
 
-  // Define columns for the table
+  const handleUpdateTask = async (values: any) => {
+    if (selectedTodo) {
+      try {
+        const taskData = {
+          title: values.taskName.trim(),  
+          description: values.description.trim(),  
+          deadline: values.selectDate ? values.selectDate.toDate() : null, 
+        };
+  
+        if (!taskData.title || !taskData.description || !taskData.deadline) {
+          message.error("All fields are required.");
+          return;
+        }
+  
+        await updateTask({ id: selectedTodo.id, ...taskData }).unwrap();
+        message.success("Task updated successfully!");
+        setShowTaskForm(false);
+        refetch(); // Refetch tasks after update
+      } catch (error) {
+        console.error("Update Task Error:", error);
+        message.error("Failed to update task. Please try again.");
+      }
+    } else {
+      message.error("No task selected.");
+    }
+  };
+  
+  
+  
+
+  
   const columns = [
     {
       title: "",
       key: "icon",
       render: (text: any, record: Todo) => (
         <HolderOutlined
-          style={{ fontSize: '16px', color: '#1890ff', cursor: 'pointer' }}
+          style={{ fontSize: "16px", color: "#1890ff", cursor: "pointer" }}
           onClick={() => handleModalOpen(record)}
         />
       ),
@@ -151,10 +207,7 @@ const DashboardData = () => {
       key: "title",
       width: 150,
       render: (text: string, record: Todo) => (
-        <span
-          style={{ cursor: 'pointer', color: '#1890ff' }}
-          onClick={() => handleModalOpen(record)}
-        >
+        <span style={{ cursor: "pointer", color: "#1890ff" }} onClick={() => handleModalOpen(record)}>
           {text}
         </span>
       ),
@@ -164,30 +217,18 @@ const DashboardData = () => {
       dataIndex: "deadline",
       key: "createdDate",
       width: 150,
-      render: (text: string) => (
-        <span style={{ fontWeight: "bold" }}>{text}</span>
-      ),
+      render: (text: string) => <span style={{ fontWeight: "bold" }}>{text}</span>,
     },
     {
       title: "",
       key: "actions",
       render: (text: string, record: Todo) => (
         <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleModalOpen(record)}
-          />
-          <Popconfirm
-            title="Are you sure to delete this task?"
-            onConfirm={() => handleDelete(record.id)}
-          >
+          <Button type="link" icon={<EditOutlined />} onClick={() => { setSelectedTodo(record); setShowTaskForm(true); }} />
+          <Popconfirm title="Are you sure to delete this task?" onConfirm={() => handleDelete(record.id)}>
             <Button type="link" icon={<DeleteOutlined />} />
           </Popconfirm>
-          <Checkbox
-            checked={record.status === "completed"}
-            onChange={(e) => handleCheckboxChange(e, record.id)}
-          />
+          <Checkbox checked={record.status === "DONE"} onChange={(e) => handleCheckboxChange(e, record.id)} />
         </Space>
       ),
       width: 150,
@@ -256,169 +297,117 @@ const DashboardData = () => {
             </Dropdown>
 
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {/* First Card */}
-              <Card className="shadow-sm rounded-lg border border-gray-200 p-1 flex flex-col justify-between h-[90px]">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-start">
-                    <Statistic
-                      value={countTasksByStatus("PENDING")}
-                      precision={0}
-                      valueStyle={{ fontSize: "18px", color: "#1f2937" }}
-                    />
-                    <span className="text-xs text-gray-700 ml-2 relative top-[-2px]">
-                      +10%
-                    </span>
-                  </div>
-                  <FileOutlined className="text-gray-500 text-lg" />
-                </div>
-                <div className="mt-1 text-gray-500 text-xs">Pending</div>
+              <Card className="shadow-sm rounded-lg border border-gray-200 p-4" style={{ backgroundColor: "#f0f2f5" }}>
+                <Title level={4} className="text-gray-700">
+                  {countTasksByStatus("PENDING")}
+                </Title>
+                <p className="text-gray-500">Pending</p>
               </Card>
 
-              {/* Second Card */}
-              <Card className="shadow-sm rounded-lg border border-gray-200 p-1 flex flex-col justify-between h-[90px]">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-start">
-                    <Statistic
-                      value={countTasksByStatus("DONE")}
-                      precision={0}
-                      valueStyle={{ fontSize: "18px", color: "#1f2937" }}
-                    />
-                    <span className="text-xs text-gray-700 ml-2 relative top-[-2px]">
-                      -10%
-                    </span>
-                  </div>
-                  <CheckOutlined className="text-gray-500 text-lg" />
-                </div>
-                <div className="mt-1 text-gray-500 text-xs">Completed</div>
+              <Card className="shadow-sm rounded-lg border border-gray-200 p-4" style={{ backgroundColor: "#f0f2f5" }}>
+                <Title level={4} className="text-gray-700">
+                  {countTasksByStatus("ON-TRACK")}
+                </Title>
+                <p className="text-gray-500">On Track</p>
               </Card>
 
-              {/* Third Card */}
-              <Card className="shadow-sm rounded-lg border border-gray-200 p-1 flex flex-col justify-between h-[90px]">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-start">
-                    <Statistic
-                      value={countTasksByStatus("ON-TRACK")}
-                      precision={0}
-                      valueStyle={{ fontSize: "18px", color: "#1f2937" }}
-                    />
-                    <span className="text-xs text-gray-700 ml-2 relative top-[-2px]">
-                      -5%
-                    </span>
-                  </div>
-                  <InfoCircleOutlined className="text-gray-500 text-lg" />
-                </div>
-                <div className="mt-1 text-gray-500 text-xs">On Track</div>
+              <Card className="shadow-sm rounded-lg border border-gray-200 p-4" style={{ backgroundColor: "#f0f2f5" }}>
+                <Title level={4} className="text-gray-700">
+                  {countTasksByStatus("OFF-TRACK")}
+                </Title>
+                <p className="text-gray-500">Off Track</p>
               </Card>
 
-              {/* Fourth Card */}
-              <Card className="shadow-sm rounded-lg border border-gray-200 p-1 flex flex-col justify-between h-[90px]">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-start">
-                    <Statistic
-                      value={countTasksByStatus("OFF-TRACK")}
-                      precision={0}
-                      valueStyle={{ fontSize: "18px", color: "#1f2937" }}
-                    />
-                    <span className="text-xs text-gray-700 ml-2 relative top-[-2px]">
-                      +5%
-                    </span>
-                  </div>
-                  <InfoCircleOutlined className="text-gray-500 text-lg" />
-                </div>
-                <div className="mt-1 text-gray-500 text-xs">Off Track</div>
+              <Card className="shadow-sm rounded-lg border border-gray-200 p-4" style={{ backgroundColor: "#f0f2f5" }}>
+                <Title level={4} className="text-gray-700">
+                  {countTasksByStatus("DONE")}
+                </Title>
+                <p className="text-gray-500">Done</p>
               </Card>
             </div>
           </div>
         </Sider>
 
-        <Content
-          style={{
-            padding: "0 24px",
-            minHeight: 280,
-            margin: "20px 20px",
-          }}
-        >
-          <div style={{ overflowX: 'auto' }}>
+        <Layout>
+          <Content
+            style={{
+              padding: "20px",
+              marginLeft: 10,
+              marginTop: 20,
+            }}
+          >
             <Table
               columns={columns}
-              dataSource={filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
-              rowKey="id"
+              dataSource={filteredData}
               pagination={paginationConfig}
-              style={{ padding: 0 }}
-              className="w-full"
+              rowKey="id"
+              scroll={{ x: 600 }}
             />
-          </div>
-        </Content>
+          </Content>
+        </Layout>
       </Layout>
 
+      {/* Update Task Modal */}
       <Modal
-        title=""
+  title="Update Task"
+  visible={showTaskForm}
+  onCancel={() => setShowTaskForm(false)}
+  footer={null}
+>
+  <Form
+    initialValues={{
+      taskName: selectedTodo?.title,
+      description: selectedTodo?.description,
+      selectDate: selectedTodo?.deadline ? moment(selectedTodo?.deadline) : null,
+      status: selectedTodo?.status,  // Set initial value for status
+    }}
+    onFinish={handleUpdateTask}
+  >
+    <Form.Item
+      name="taskName"
+      label="Task Name"
+      rules={[{ required: true, message: "Please enter task name" }]}
+    >
+      <Input />
+    </Form.Item>
+    <Form.Item
+      name="description"
+      label="Description"
+      rules={[{ required: true, message: "Please enter a description" }]}  // Added required rule
+    >
+      <Input.TextArea rows={4} />
+    </Form.Item>
+    <Form.Item
+      name="selectDate"
+      label="Deadline"
+      rules={[{ required: true, message: "Please select a deadline" }]}
+    >
+      <DatePicker />
+    </Form.Item>
+    <Form.Item>
+      <Button type="primary" htmlType="submit">
+        Update Task
+      </Button>
+    </Form.Item>
+  </Form>
+</Modal>
+
+
+      {/* Task Details Modal */}
+      <Modal
+        title="Task Details"
         visible={isModalVisible}
         onCancel={handleModalClose}
         footer={null}
       >
         {selectedTodo && (
-          <>
-            <div>
-              <Title level={4}>{selectedTodo.title}</Title>
-              <div className="flex flex-row justify-between">
-                <div>
-                  <button>Get thanks</button>
-                </div>
-                <div>
-                  <span> Due 29/8/2024</span>
-                </div>
-              </div>
-              <p><strong>Content:</strong> {selectedTodo.content}</p>
-              <p><strong>Created Date:</strong> {selectedTodo.createdDate}</p>
-              <p><strong>Status:</strong> {selectedTodo.status}</p>
-            </div>
-            <div className="flex flex-row justify-between">
-              <div>createdDate:29/8/2024</div>
-              <div>
-                <span><EditOutlined type='primary' onClick={() => setShowTaskForm(true)}/></span>
-                <span><DeleteOutlined type='primary'/></span>
-              </div>
-            </div>
-          </>
+          <div>
+            <p><strong>Title:</strong> {selectedTodo.title}</p>
+            <p><strong>Description:</strong> {selectedTodo.description}</p>
+            <p><strong>Content:</strong> {selectedTodo.content}</p>
+            <p><strong>Created Date:</strong> {selectedTodo.createdDate}</p>
+          </div>
         )}
-      </Modal>
-      <Modal
-        title="New Task"
-        open={showTaskForm}
-        onCancel={() => setShowTaskForm(false)}
-        footer={null}
-        closable={false}
-      >
-        <Form name="taskForm" layout="vertical" >
-          <div className="flex justify-between gap-4">
-            <Form.Item
-              label="Task Name"
-              name="taskName"
-              className="w-1/2"
-              rules={[{ required: true, message: 'Please enter the task name' }]}
-            >
-              <Input placeholder="Enter title" prefix={<FileTextOutlined />} />
-            </Form.Item>
-            <Form.Item
-              label="Select Date"
-              name="selectDate"
-              className="w-1/2"
-              rules={[{ required: true, message: 'Please select a date' }]}
-            >
-              <DatePicker format="YYYY-MM-DD" placeholder="MM/DD/YYYY" />
-            </Form.Item>
-          </div>
-          <Form.Item label="Description" name="description">
-            <Input.TextArea placeholder="Enter description" />
-          </Form.Item>
-          <div className="flex justify-end mt-4">
-            <Button type="primary" htmlType="submit" size="small" className="flex items-center gap-2">
-              <span>Add Task</span>
-              <PlusOutlined />
-            </Button>
-          </div>
-        </Form>
       </Modal>
     </Layout>
   );

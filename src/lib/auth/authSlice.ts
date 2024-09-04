@@ -41,6 +41,9 @@ export const apiSlice = createApi({
         body: loginData,
       }),
     }),
+    getUser: builder.query<any, string>({
+      query: (id) => `users/${id}`,
+  }),
     forgetPassword: builder.mutation<any, { email: string }>({
       query: (emailData) => ({
         url: "/auth/forgot-password",
@@ -49,9 +52,9 @@ export const apiSlice = createApi({
       }),
     }),
     fetchUserProfile: builder.query<any, void>({
-      query: () => "/auth/me", // Adjust this endpoint as necessary
+      query: () => "/auth/me", 
     }),
-    // Task management endpoints
+   
     fetchTasks: builder.query<any, void>({
       query: () => "/todos/my-todos",
     }),
@@ -61,6 +64,7 @@ export const apiSlice = createApi({
         method: "POST",
         body: taskData,
       }),
+      
     }),
     updateTask: builder.mutation<any, { id: string; data: any }>({
       query: ({ id, data }) => ({
