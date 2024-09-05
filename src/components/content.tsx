@@ -122,7 +122,7 @@ const DashboardData = () => {
         console.log(updatedTask)
     try {
   
-      await updateTask({ id: task.id, data: updatedTask }).unwrap();
+      await updateTask({ id: task.id.toString(), data: updatedTask }).unwrap();
       message.success("Task status updated successfully!");
   
 
@@ -140,7 +140,7 @@ const DashboardData = () => {
 
   const handleDelete = async (id: number): Promise<void> => {
     try {
-      await deleteTask(id).unwrap();
+      await deleteTask(id.toString()).unwrap();
       message.success("Task deleted successfully");
       refetch();
     } catch (error) {
@@ -158,7 +158,7 @@ const DashboardData = () => {
       };
 
       try {
-        await updateTask({ id: selectedTodo.id, data: updatedTask }).unwrap();
+        await updateTask({ id: selectedTodo.id.toString(), data: updatedTask }).unwrap();
         message.success("Task updated successfully!");
         setSelectedTodo(null);
         setShowTaskForm(false);
