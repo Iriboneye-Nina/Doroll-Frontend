@@ -115,28 +115,18 @@ const DashboardData = () => {
     setIsModalVisible(false);
     setSelectedTodo(null);
   };
-
   const handleCheckboxChange = async (task: Todo) => {
     const updatedStatus = task.status === "DONE" ? "PENDING" : "DONE";
     const updatedTask = { ...task, status: updatedStatus };
-        console.log(updatedTask)
-    try {
   
+    try {
       await updateTask({ id: task.id.toString(), data: updatedTask }).unwrap();
       message.success("Task status updated successfully!");
-  
-
-      console.log("Updated Task:", updatedTask);
-  
-      await refetch(); 
-
-      console.log("Refetched Data:", data);
-  
+      await refetch();  
     } catch (error: any) {
       message.error(`Failed to update task status: ${error.message}`);
     }
   };
-  
 
   const handleDelete = async (id: number): Promise<void> => {
     try {
@@ -147,7 +137,6 @@ const DashboardData = () => {
       message.error("Failed to delete the task");
     }
   };
-
   const handleEditSave = async (values: any) => {
     if (selectedTodo) {
       const updatedTask = {
@@ -237,13 +226,14 @@ const DashboardData = () => {
             <Button type="link" icon={<DeleteOutlined />} />
           </Popconfirm>
           <Checkbox
-            checked={record.status === "DONE"}
-            onChange={() => handleCheckboxChange(record)}
-          />
+          checked={record.status === "DONE"}
+          onChange={() => handleCheckboxChange(record)} 
+        />
         </Space>
       ),
       width: 150,
-    },
+    }
+    
   ];
 
   const paginationConfig = {
@@ -257,12 +247,12 @@ const DashboardData = () => {
     <Layout>
       <div className="p-2">
         <div className="bg-white h-14 flex justify-between items-center px-6 py-1 rounded-lg mt-1 mx-auto max-w-screen-lg">
-          <span className="text-lg">
+        <span className="text-lg">
             {isLoading
               ? "Loading tasks..."
               : error
               ? "Failed to load tasks"
-              : `Pending tasks - ${filteredData.length}`}
+              : `Pending tasks - ${filteredData.filter((task: Todo) => task.status === 'PENDING').length}`}
           </span>
           <Input
             prefix={<SearchOutlined />}
@@ -332,6 +322,24 @@ const DashboardData = () => {
                 />
               </Card>
             </div>
+            <Card
+              className="shadow-sm bg-gray-100 rounded-lg mt-4"
+              style={{
+                borderRadius: "6px",
+                border: "1px solid #e0e0e0",
+                padding: "8px",
+              }}
+            >
+              <div className="text-gray-500 text-xs">Daily Tip:</div>
+              <div className="mt-1 flex items-center">
+                <HolderOutlined
+                  style={{ cursor: "grab", transform: "rotate(90deg)" }}
+                />
+                <span className="ml-2 text-xs">
+                  Use this icon on the left to re-arrange tasks
+                </span>
+              </div>
+            </Card>
           </div>
         </Sider>
         <Layout style={{ padding: "0 24px", minHeight: 280 }}>

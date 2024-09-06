@@ -66,7 +66,7 @@ const Navbar = (props: any) => {
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
-  const [form] = Form.useForm(); // Form instance for resetting fields
+  const [form] = Form.useForm(); 
   const [addTask] = useAddTaskMutation();
   const router = useRouter();
   const { data, error, isLoading, refetch } = useFetchTasksQuery();
@@ -90,38 +90,47 @@ const Navbar = (props: any) => {
 
   const handleAddTask = async (values: any) => {
     try {
+      // Get the current date and deadline date (without time part)
       const currentDate = new Date();
       const deadlineDate = new Date(values.selectDate.format('YYYY-MM-DD'));
-
+  
+      // Normalize dates to exclude time part
+      currentDate.setHours(0, 0, 0, 0);
+      deadlineDate.setHours(0, 0, 0, 0);
+  
+      // Determine status based on comparison
       let status;
       if (deadlineDate < currentDate) {
-        status = 'OFF_TRACK'; 
-      } else if (deadlineDate.toDateString() === currentDate.toDateString()) {
-        status = 'ON_TRACK'; 
+        status = 'OFF_TRACK'; // Past date
+      } else if (deadlineDate.getTime() === currentDate.getTime()) {
+        status = 'ON_TRACK'; // Today's date
       } else {
-        status = 'PENDING'; 
+        status = 'PENDING'; // Future date
       }
-
+  
+      // Prepare task data
       const taskData = {
         title: values.taskName,
         description: values.description,
         deadline: values.selectDate.format('YYYY-MM-DD'),
-        status: status 
+        status: status // Ensure this matches EStatus values in backend
       };
-
+  
+      // Add task and handle the response
       await addTask(taskData).unwrap();
-
+  
       message.success('Task added successfully!');
-      refetch(); 
-      form.resetFields(); 
-      setShowTaskForm(false);
-
+      refetch(); // Refresh the task list
+      form.resetFields(); // Reset the form
+      setShowTaskForm(false); // Hide the form after task submission
+  
     } catch (error) {
       console.error('Failed to add task:', error);
       message.error('Failed to add task. Please try again.');
     }
   };
-
+  
+  
   const handleLogout = () => {
     localStorage.removeItem("token");
     setEmail(null);

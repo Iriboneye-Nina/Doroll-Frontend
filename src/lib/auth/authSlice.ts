@@ -42,7 +42,7 @@ export const apiSlice = createApi({
       }),
     }),
     getUser: builder.query<any, string>({
-      query: (id) => `users/${id}`,
+      query: (id) => `user/${id}`,
     }),
     forgetPassword: builder.mutation<any, { email: string }>({
       query: (emailData) => ({
@@ -64,6 +64,15 @@ export const apiSlice = createApi({
         body: taskData,
       }),
     }),
+      updatePassword: builder.mutation({
+        query: ({ id,currentPassword,newPassword }) => ({
+          url: `/user/updatePassword/${id}`,
+          method: 'PUT',
+          body: {currentPassword,newPassword}
+        }),
+       
+      }),
+   
     updateTask: builder.mutation<any, { id: string; data: any }>({
       query: ({ id, data }) => ({
         url: `/todos/${id}`,
@@ -115,4 +124,5 @@ export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
   useGetUserQuery,
+  useUpdatePasswordMutation,
 } = apiSlice;
