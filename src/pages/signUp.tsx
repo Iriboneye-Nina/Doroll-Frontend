@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input, Card, Checkbox, Button, Form, message } from 'antd';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -9,12 +9,16 @@ const UserOutlined = dynamic(() => import('@ant-design/icons/UserOutlined'), { s
 const MailOutlined = dynamic(() => import('@ant-design/icons/MailOutlined'), { ssr: false });
 const PhoneOutlined = dynamic(() => import('@ant-design/icons/PhoneOutlined'), { ssr: false });
 const LockOutlined = dynamic(() => import('@ant-design/icons/LockOutlined'), { ssr: false });
+const EyeOutlined = dynamic(() => import('@ant-design/icons/EyeOutlined'), { ssr: false });
+const EyeInvisibleOutlined = dynamic(() => import('@ant-design/icons/EyeInvisibleOutlined'), { ssr: false });
 const LogoutOutlined = dynamic(() => import('@ant-design/icons/LogoutOutlined'), { ssr: false });
 
 const SignUp = () => {
   const router = useRouter(); 
   const [register, { isLoading }] = useRegisterUserMutation();
   const [form] = Form.useForm();
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
   const onFinish = async (values: any) => {
     try {
@@ -36,7 +40,7 @@ const SignUp = () => {
   return (
     <div className="bg-white min-h-screen flex flex-col justify-center items-center py-8">
       <Card className="w-full max-w-lg p-4 bg-white rounded-lg shadow-lg">
-        <h2 className="text-center text-xl font-bold mb-6">Register</h2>
+        <h2 className=" text-xl font-bold mb-6">Register</h2>
         <Form onFinish={onFinish} form={form} layout="vertical">
          
           <div className="flex gap-3 mb-4">
@@ -105,11 +109,15 @@ const SignUp = () => {
                 label="Password"
                 rules={[{ required: true, message: 'Please enter your password' }]}
               >
-                <Input
+                <Input.Password
                   placeholder="Enter your password"
                   prefix={<LockOutlined className="text-[#C0D310]" />}
-                  type="password"
+                  type={passwordVisible ? "text" : "password"}
                   className="text-sm"
+                  iconRender={visible => 
+                    visible ? <EyeOutlined onClick={() => setPasswordVisible(!passwordVisible)} /> : 
+                              <EyeInvisibleOutlined onClick={() => setPasswordVisible(!passwordVisible)} />
+                  }
                 />
               </Form.Item>
             </div>
@@ -129,11 +137,15 @@ const SignUp = () => {
                   }),
                 ]}
               >
-                <Input
+                <Input.Password
                   placeholder="Confirm your password"
                   prefix={<LockOutlined className="text-[#C0D310]" />}
-                  type="password"
+                  type={confirmPasswordVisible ? "text" : "password"}
                   className="text-sm"
+                  iconRender={visible => 
+                    visible ? <EyeOutlined onClick={() => setConfirmPasswordVisible(!confirmPasswordVisible)} /> : 
+                              <EyeInvisibleOutlined onClick={() => setConfirmPasswordVisible(!confirmPasswordVisible)} />
+                  }
                 />
               </Form.Item>
             </div>

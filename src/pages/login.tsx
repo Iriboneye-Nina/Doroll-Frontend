@@ -31,7 +31,6 @@ export default function Login() {
             message.error(errorMsg);
         }
     };
-
     return (
         <div className="flex flex-col items-center space-y-6 py-10 bg-gray-100">
             <Card className="w-full sm:w-3/4 md:w-2/3 lg:w-1/2 p-0">

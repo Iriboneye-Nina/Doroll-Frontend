@@ -323,23 +323,25 @@ const DashboardData = () => {
               </Card>
             </div>
             <Card
-              className="shadow-sm bg-gray-100 rounded-lg mt-4"
-              style={{
-                borderRadius: "6px",
-                border: "1px solid #e0e0e0",
-                padding: "8px",
-              }}
-            >
-              <div className="text-gray-500 text-xs">Daily Tip:</div>
-              <div className="mt-1 flex items-center">
-                <HolderOutlined
-                  style={{ cursor: "grab", transform: "rotate(90deg)" }}
-                />
-                <span className="ml-2 text-xs">
-                  Use this icon on the left to re-arrange tasks
-                </span>
-              </div>
-            </Card>
+  className="shadow-sm bg-gray-100 rounded-lg"
+  style={{
+    borderRadius: "6px",
+    border: "1px solid #e0e0e0",
+    padding: "8px",
+    marginTop: "20px", // Increase the margin here
+  }}
+>
+  <div className="text-gray-500 text-xs">Daily Tip:</div>
+  <div className="mt-1 flex items-center">
+    <HolderOutlined
+      style={{ cursor: "grab", transform: "rotate(90deg)" }}
+    />
+    <span className="ml-2 text-xs">
+      Use this icon on the left to re-arrange tasks
+    </span>
+  </div>
+</Card>
+
           </div>
         </Sider>
         <Layout style={{ padding: "0 24px", minHeight: 280 }}>

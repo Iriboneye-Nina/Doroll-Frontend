@@ -94,16 +94,15 @@ const Navbar = (props: any) => {
       const currentDate = new Date();
       const deadlineDate = new Date(values.selectDate.format('YYYY-MM-DD'));
   
-      // Normalize dates to exclude time part
+      // Normalize dates to exclude the time part
       currentDate.setHours(0, 0, 0, 0);
       deadlineDate.setHours(0, 0, 0, 0);
   
-      // Determine status based on comparison
       let status;
       if (deadlineDate < currentDate) {
-        status = 'OFF_TRACK'; // Past date
+        status = 'OFF-TRACK'; // Past date
       } else if (deadlineDate.getTime() === currentDate.getTime()) {
-        status = 'ON_TRACK'; // Today's date
+        status = 'ON-TRACK'; // Today's date
       } else {
         status = 'PENDING'; // Future date
       }
@@ -113,22 +112,22 @@ const Navbar = (props: any) => {
         title: values.taskName,
         description: values.description,
         deadline: values.selectDate.format('YYYY-MM-DD'),
-        status: status // Ensure this matches EStatus values in backend
+        status: status // Use calculated status
       };
   
-      // Add task and handle the response
       await addTask(taskData).unwrap();
   
       message.success('Task added successfully!');
-      refetch(); // Refresh the task list
-      form.resetFields(); // Reset the form
-      setShowTaskForm(false); // Hide the form after task submission
+      refetch(); // Refetch the task list or data
+      form.resetFields(); // Reset the form fields
+      setShowTaskForm(false); // Close the form after submission
   
     } catch (error) {
       console.error('Failed to add task:', error);
       message.error('Failed to add task. Please try again.');
     }
   };
+  
   
   
   const handleLogout = () => {
