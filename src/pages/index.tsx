@@ -31,7 +31,6 @@ export default function Login() {
             message.error(errorMsg);
         }
     };
-
     return (
         <div className="flex flex-col items-center space-y-6 py-10 bg-gray-100">
             <Card className="w-full sm:w-3/4 md:w-2/3 lg:w-1/2 p-0">
@@ -97,20 +96,19 @@ export default function Login() {
                 </div>
             </Card>
 
-            <Card className="w-full flex sm:w-3/4 md:w-2/3 lg:w-1/2 p-0">
-    <div className="flex justify-center items-center p-5">
-        <div className="flex flex-col items-center mr-4">
-            <Text>If you don’t have an account?</Text>
-            <Text>Go to register</Text>
-         </div>
-         <Link href="/signUp" className="ml-4">
-            <Button icon={<LoginOutlined className="text-[#C0D310]" />} className="text-[#C0D310]">
-                Register
-            </Button>
-         </Link>
- </div>
-   </Card>
-
+            <Card className="w-full sm:w-3/4 md:w-2/3 lg:w-1/2 p-0">
+                <div className="flex justify-center items-center p-5">
+                    <div className="flex flex-col items-center mr-4">
+                        <Text>If you don’t have an account?</Text>
+                        <Text>Go to register</Text>
+                    </div>
+                    <Link href="/signUp">
+                        <Button icon={<LoginOutlined className="text-[#C0D310]" />} className="text-[#C0D310]">
+                            Register
+                        </Button>
+                    </Link>
+                </div>
+            </Card>
         </div>
     );
 }
