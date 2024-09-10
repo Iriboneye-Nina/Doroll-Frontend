@@ -202,9 +202,10 @@ const DashboardData = () => {
       dataIndex: "deadline",
       key: "createdDate",
       width: 150,
-      render: (text: string) => (
-        <span style={{ fontWeight: "bold" }}>{text}</span>
-      ),
+      render: (text: string) => {
+        const formattedDate = moment(text).format("M/D/YYYY"); 
+        return <span style={{ fontWeight: "bold" }}>{formattedDate}</span>;
+      },
     },
     {
       title: "",
@@ -328,7 +329,7 @@ const DashboardData = () => {
     borderRadius: "6px",
     border: "1px solid #e0e0e0",
     padding: "8px",
-    marginTop: "20px", // Increase the margin here
+    marginTop: "20px", 
   }}
 >
   <div className="text-gray-500 text-xs">Daily Tip:</div>
@@ -373,7 +374,7 @@ const DashboardData = () => {
             <Title level={5}>Task: {selectedTodo.title}</Title>
             <p>Status: {selectedTodo.status}</p>
             <p>Description: {selectedTodo.description}</p>
-            <p>Content: {selectedTodo.content}</p>
+            <p></p>
             <p>Created Date: {moment(selectedTodo.createdDate).format("YYYY-MM-DD")}</p>
             {selectedTodo.deadline && <p>Deadline: {moment(selectedTodo.deadline).format("YYYY-MM-DD")}</p>}
           </div>
