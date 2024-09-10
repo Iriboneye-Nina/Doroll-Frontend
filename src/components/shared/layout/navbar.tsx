@@ -23,11 +23,6 @@ const ProfileModal: React.FC<{ onClose: () => void; email: string; onLogout: () 
   <Card className="absolute top-12 right-0 p-4 bg-white shadow-md rounded-md" style={{ zIndex: 111 }}>
     <div className="flex flex-col">
       <div className="flex gap-1 mb-4 mt-0">
-        <img
-          src="/profile.jpg"
-          alt="Profile"
-          className="w-16 h-16 rounded w-[64px] h-[64px] object-cover mr-2"
-        />
         <h2 className="text-xl font-semibold p-1">{email}</h2>
       </div>
       <div className="w-full mb-4 border-t border-gray-200" />

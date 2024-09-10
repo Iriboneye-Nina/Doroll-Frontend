@@ -135,7 +135,7 @@ export default function EditProfile() {
                 {/* Profile Section */}
                 <div className="bg-[#dddd] rounded-lg flex flex-col justify-center items-center px-6 py-8 gap-4">
                     <div className="w-16 h-16 rounded-full object-cover mr-2">
-                        <Image src="/profile.jpg" alt="Profile picture" width={96} height={96} className="object-cover"/>
+                      
                     </div>
                     <h1 className="text-xl font-bold">{formData.firstName} {formData.lastName}</h1>
                     <p className="text-gray-500">{formData.email}</p>
