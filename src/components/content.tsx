@@ -204,7 +204,7 @@ const DashboardData = () => {
       width: 150,
       render: (text: string) => {
         const formattedDate = moment(text).format("M/D/YYYY"); 
-        return <span style={{ fontWeight: "bold" }}>{formattedDate}</span>;
+        return <span style={{ fontWeight: "bold" }}>created{formattedDate}</span>;
       },
     },
     {
