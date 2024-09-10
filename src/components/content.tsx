@@ -203,8 +203,8 @@ const DashboardData = () => {
       key: "createdDate",
       width: 150,
       render: (text: string) => {
-        const formattedDate = moment(text).format("M/D/YYYY"); 
-        return <span style={{ fontWeight: "bold" }}>created{formattedDate}</span>;
+        const formattedDate = moment(text).format("dd/mm/yyy"); 
+        return <span style={{ fontWeight: "bold" }}>Due:{formattedDate}</span>;
       },
     },
     {
